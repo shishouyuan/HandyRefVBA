@@ -6,7 +6,7 @@
 
 'Usage:
 'Step 1: Select the contents that needed to be referenced and run macro CreateReferencePoint.
-'Step 2: Select the point you want to insert cross reference and run macro InsertCrossReferebceField.
+'Step 2: Select the point you want to insert cross reference and run macro InsertCrossReferenceField.
 'Tips: You can add keyboard shortcut to speed up the process. Search for "add keyboard shortcut for macro in word" to get help.
 
 '用于在Word里方便地添加交叉引用
@@ -16,7 +16,7 @@
 
 '用法:
 '步骤1：选中要被引用的内容然后执行宏 CreateReferencePoint。
-'步骤2：选中想要插入交插引用的地方然后执行宏 InsertCrossReferebceField。
+'步骤2：选中想要插入交插引用的地方然后执行宏 InsertCrossReferenceField。
 '提示: 可以通过给键盘快捷方式给这两个宏来提高操作速度. 搜索 "Word 给宏添加快捷键" 获取帮助。
 
 Dim selectedBM As Bookmark
@@ -64,7 +64,7 @@ Sub CreateReferencePoint()
     
 End Sub
 
-Sub InsertCrossReferebceField()
+Sub InsertCrossReferenceField()
     If Not selectedBM Is Nothing Then
         Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name
         lastBMRefered = True
