@@ -1,3 +1,4 @@
+'https://github.com/shishouyuan/HandyRefVBA
 'A handy way to insert Cross Reference in MS Word
 'Author: Shouyuan Shi @ South China University of Technology
 'E-mail: shishouyuan@outlook.com
@@ -18,26 +19,27 @@
 '步骤2：选中想要插入交插引用的地方然后执行宏 InsertCrossReferebceField。
 '提示: 可以通过给键盘快捷方式给这两个宏来提高操作速度. 搜索 "Word 给宏添加快捷键" 获取帮助。
 
-
 Dim selectedBM As Bookmark
 Dim lastBMRefered As Boolean
 
-Sub CreateReferencePoint()    
-    
+Sub CreateReferencePoint()
+        
     Dim rg As Range
     Set rg = Selection.Range
     
     If Not selectedBM Is Nothing Then
-        If rg.IsEqual(selectedBM.Range) Then
-            Return  'same range, thus the same bookmark returned
+        If Not IsObjectValid(selectedBM) Then
+            Set selectedBM = Nothing    'set to Nothing when the bookmark is deleted by user
+        ElseIf rg.IsEqual(selectedBM.Range) Then
+            Exit Sub  'same range, thus the same bookmark returned
         Else
             If Not lastBMRefered Then
                 selectedBM.Delete   'delete unreferenced bookmark
                 Set selectedBM = Nothing
             End If
         End If
-    End If       
-
+    End If
+    
     Dim oldbm As Bookmark
     Dim bmi As Bookmark
     
@@ -51,15 +53,15 @@ Sub CreateReferencePoint()
     Next bmi
     Bookmarks.ShowHidden = False
     
-    If Not (oldbm Is Nothing) Then
+    If Not oldbm Is Nothing Then
         Set selectedBM = oldbm
+        lastBMRefered = True
     Else
         'create new bookmark using timestamp as its name
         Set selectedBM = Bookmarks.Add("_SSYRef" & CLngLng(Now * 1000000), rg)
+        lastBMRefered = False
     End If
     
-    lastBMRefered = False
-
 End Sub
 
 Sub InsertCrossReferebceField()
@@ -70,4 +72,3 @@ Sub InsertCrossReferebceField()
         MsgBox "No Reference Point selected!", vbOKOnly, "Add Cross Reference"
     End If
 End Sub
-
