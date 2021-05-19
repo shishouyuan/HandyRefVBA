@@ -37,7 +37,7 @@
 * **步骤1：** 选中要被引用的内容, 然后点击“创建引用源”或按快捷键“Ctrl+Alt+C”；
 * **步骤2：** 将光标置于需要插入交叉引用的地方, 点击“交叉引用”或按快捷键“Ctrl+Alt+V”。此步骤可重复用于连续添加对同一对象的多个引用。
 ## “HandyRef-快引”的安装
-&ensp;&ensp;&ensp;&ensp;首先请从https://github.com/shishouyuan/HandyRefVBA的`Release`文件夹中获取最新的模板文件, 想使用中文界面请下载`HandyRef-中文.dotm`。有2种安装方式, 但在使用前都请**确保启用宏** 。
+&ensp;&ensp;&ensp;&ensp;首先请从https://github.com/shishouyuan/HandyRefVBA 的`Release`文件夹中获取最新的模板文件, 想使用中文界面请下载`HandyRef-中文.dotm`。有2种安装方式, 但在使用前都请**确保启用宏** 。
 ### 全局安装“HandyRef-快引”
 &ensp;&ensp;&ensp;&ensp;如果希望在编辑任何Word文件时都可以使用“HandyRef-快引”, 请选择全局安装。
 &ensp;&ensp;&ensp;&ensp;安装方法仅需1步。将`HandyRef-中文.dotm`模板文件放入电脑中的`%AppData%\Microsoft\Word\STARTUP`文件夹, 重新打开Word根据提示启用宏即可。
