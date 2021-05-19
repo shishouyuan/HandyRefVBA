@@ -1,0 +1,13 @@
+ <customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui"> 
+   <ribbon> 
+     <tabs> 
+       <tab idMso="TabReferences"> 
+         <group id="HandyRefGroup" label="HandyRef-快引"> 
+           <button id="HandyRef_CreateReferencePoint_Button" label="创建引用源" screentip="创建引用源 (Ctrl + Alt + C)" size="large" imageMso="TableOfContentsAddTextGallery" onAction="HandyRef_CreateReferencePoint_RibbonFun" /> 
+           <button id="HandyRef_InsertCrossReferenceField_Button" label="交叉引用" screentip="插入交叉引用 (Ctrl + Alt + V)"  size="large" imageMso="CrossReferenceInsert"  onAction="HandyRef_InsertCrossReferenceField_RibbonFun" /> 
+           <button id="HandyRef_About_Button" label="关于 快引" size="large" imageMso="Info"  onAction="HandyRef_About_RibbonFun" /> 
+         </group > 
+       </tab> 
+     </tabs> 
+   </ribbon> 
+ </customUI> 
