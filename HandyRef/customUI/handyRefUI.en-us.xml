@@ -4,7 +4,7 @@
        <tab idMso="TabReferences"> 
          <group id="HandyRefGroup" label="HandyRef"> 
            <button id="HandyRef_CreateReferencePoint_Button" label="Create Reference Point" screentip="Create Reference Point (Ctrl + Alt + C)" size="large" imageMso="TableOfContentsAddTextGallery" onAction="HandyRef_CreateReferencePoint_RibbonFun" /> 
-           <button id="HandyRef_InsertCrossReferenceField_Button" label="Insert Reference" screentip="Create Reference Point (Ctrl + Alt + V)"  size="large" imageMso="CrossReferenceInsert"  onAction="HandyRef_CreateReferencePoint_RibbonFun" /> 
+           <button id="HandyRef_InsertCrossReferenceField_Button" label="Insert Reference" screentip="Create Reference Point (Ctrl + Alt + V)"  size="large" imageMso="CrossReferenceInsert"  onAction="HandyRef_InsertCrossReferenceField_RibbonFun" /> 
            <button id="HandyRef_About_Button" label="About HandyRef" size="large" imageMso="Info"  onAction="HandyRef_About_RibbonFun" /> 
          </group > 
        </tab> 
