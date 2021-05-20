@@ -1,28 +1,20 @@
 'https://github.com/shishouyuan/HandyRefVBA
+
 'A handy way to insert Cross Reference in MS Word
 'Author: Shouyuan Shi @ South China University of Technology
 'E-mail: shishouyuan@outlook.com
 'Creating Date: 2021/5/11
 
-'Usage:
-'Step 1: Select the contents that needed to be referenced and run macro CreateReferencePoint.
-'Step 2: Select the point you want to insert cross reference and run macro InsertCrossReferenceField.
 
 '用于在Word里方便地添加交叉引用
 '作者: 史守圆 @ 华南理工大学
 'E-mail: shishouyuan@outlook.com
 '创建时期: 2021/5/11
 
-'用法:
-'步骤1：选中要被引用的内容然后执行宏 CreateReferencePoint。
-'步骤2：选中想要插入交插引用的地方然后执行宏 InsertCrossReferenceField。
 
-
-Const HandyRefVersion = "20210520.1434"
+Const HandyRefVersion = "20210521.0129"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
-
-
 
 Const BookmarkPrefix = "_HandyRef"
 Const RefBrokenCommentTitle = "$HANDYREF_REFERENCE_BROKEN_COMMENT$"
@@ -42,8 +34,10 @@ Const BrokenRefNumPosHolder = "#"  '数量占位符
     Const TEXT_NonCommecialPrompt = "仅限非商业用途"
     Const TEXT_RefBrokenComment = "引用源丢失！"
     Const TEXT_BrokenRefFoundPrompt = "发现了 " & BrokenRefNumPosHolder & " 个损坏的引用，已为其添加批注。"
-    Const TEXT_NoBrokenRefFoundPrompt = "没有发现损坏的索引。"
+    Const TEXT_NoBrokenRefFoundPrompt = "没有发现损坏的引用。"
     Const TEXT_RefBrokenCommentClearedPrompt = "引用损坏批注已清除。"
+    Const TEXT_RefCheckingForWholeDocPrompt = "当前没有选中的内容，检查整个文档吗？" & vbCrLf & "这可能会需要一些时间。"
+    Const TEXT_ClearRefBrokenCommentForWholeDocPrompt = "当前没有选中的内容，清除整个文档中的引用损坏批注吗？"
 
 #Else
 
@@ -59,7 +53,8 @@ Const BrokenRefNumPosHolder = "#"  '数量占位符
     Const TEXT_BrokenRefFoundPrompt = BrokenRefNumPosHolder & " broken reference found, and comments are attached."
     Const TEXT_NoBrokenRefFoundPrompt = "No broken reference found."
     Const TEXT_RefBrokenCommentClearedPrompt = "Reference broken comments cleared."
-    
+    Const TEXT_RefCheckingForWholeDocPrompt = "Nothing is selected. Check the whole document?" & vbCrLf & "This may take a while."
+    Const TEXT_ClearRefBrokenCommentForWholeDocPrompt = "Nothing is selected. Clear reference broken comments for the whole document?"
 #End If
 
 
@@ -78,7 +73,7 @@ Public Sub HandyRef_CreateReferencePoint()
 
      
     If rg.End - rg.Start = 0 Then
-        MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly, TEXT_HandyRefAppName
+        MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly + vbInformation, TEXT_HandyRefAppName
         Exit Sub
     End If
    
@@ -133,7 +128,7 @@ Public Sub HandyRef_InsertCrossReferenceField()
                 ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name
                 lastBMRefered = True
             Else
-                MsgBox TEXT_InsertCrossReferenceField_CannotCrossFile, vbOKOnly, TEXT_HandyRefAppName
+                MsgBox TEXT_InsertCrossReferenceField_CannotCrossFile, vbOKOnly + vbInformation, TEXT_HandyRefAppName
             End If
         Else
             Set selectedBM = Nothing
@@ -141,35 +136,56 @@ Public Sub HandyRef_InsertCrossReferenceField()
         End If
     Else
 noRefPointPrompt:
-        MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly, TEXT_HandyRefAppName
+        MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
     End If
 End Sub
 
 Public Sub HandyRef_ClearRefBrokenComment_RibbonFun(ByVal control As IRibbonControl)
-    HandyRef_ClearRefBrokenComment
-    MsgBox TEXT_RefBrokenCommentClearedPrompt, vbOKOnly, TEXT_HandyRefAppName
+    
+    If Application.Selection.End - Application.Selection.Start = 0 Then
+        If MsgBox(TEXT_ClearRefBrokenCommentForWholeDocPrompt, vbOKCancel + vbQuestion, TEXT_HandyRefAppName) = vbOK Then
+            HandyRef_ClearRefBrokenComment ActiveDocument.Range
+        Else
+            Exit Sub
+        End If
+    Else
+        HandyRef_ClearRefBrokenComment Application.Selection.Range
+    End If
+    MsgBox TEXT_RefBrokenCommentClearedPrompt, vbOKOnly + vbInformation, TEXT_HandyRefAppName
+    
 End Sub
 
-Public Sub HandyRef_ClearRefBrokenComment()
+Public Sub HandyRef_ClearRefBrokenComment(targetRange As Range)
     Dim cmt As Comment
     Dim s As String
-    For Each cmt In ActiveDocument.Comments
-        s = cmt.Range.Paragraphs.Last.Range.Text
-        s = Replace(s, vbCr, "")
-        s = Replace(s, vbLf, "")
-        If StrComp(s, RefBrokenCommentTitle) = 0 Then
-            cmt.DeleteRecursively
+    For Each cmt In targetRange.Comments
+        If cmt.Reference.InRange(targetRange) Then 'targetRange.Comments will also return comments before targentRange. may be a bug or misunderstanding
+            s = cmt.Range.Paragraphs.Last.Range.Text
+            s = Replace(s, vbCr, "")
+            s = Replace(s, vbLf, "")
+            s = Trim(s)
+            If StrComp(s, RefBrokenCommentTitle) = 0 Then
+                cmt.DeleteRecursively
+                
+            End If
         End If
     Next cmt
 End Sub
  
 Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
-    HandyRef_CheckForBrokenRef
+    If Application.Selection.End - Application.Selection.Start = 0 Then
+        If MsgBox(TEXT_RefCheckingForWholeDocPrompt, vbOKCancel + vbQuestion, TEXT_HandyRefAppName) = vbOK Then
+            HandyRef_CheckForBrokenRef ActiveDocument.Range
+        End If
+    Else
+        HandyRef_CheckForBrokenRef Application.Selection.Range
+    End If
+    
 End Sub
 
-Public Sub HandyRef_CheckForBrokenRef()
+Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
 
-    HandyRef_ClearRefBrokenComment
+    HandyRef_ClearRefBrokenComment checkingRange
     
     Dim refRegExp As Object
     Set refRegExp = CreateObject("VBScript.RegExp")
@@ -185,7 +201,7 @@ Public Sub HandyRef_CheckForBrokenRef()
     Dim fd As Field
     Dim bmName As String
     Dim cmt As Comment
-    For Each fd In ActiveDocument.Fields
+    For Each fd In checkingRange.Fields
         If fd.Type = wdFieldRef Then
             Set r = refRegExp.Execute(fd.Code.Text)
             If r.Count > 0 Then
@@ -212,9 +228,9 @@ Public Sub HandyRef_CheckForBrokenRef()
     Next fd
     
     If brokenCount = 0 Then
-        MsgBox TEXT_NoBrokenRefFoundPrompt, vbOKOnly, TEXT_HandyRefAppName
+        MsgBox TEXT_NoBrokenRefFoundPrompt, vbOKOnly + vbInformation, TEXT_HandyRefAppName
     Else
-        MsgBox Replace(TEXT_BrokenRefFoundPrompt, BrokenRefNumPosHolder, CStr(brokenCount)), vbOKOnly, TEXT_HandyRefAppName
+        MsgBox Replace(TEXT_BrokenRefFoundPrompt, BrokenRefNumPosHolder, CStr(brokenCount)), vbOKOnly + vbInformation, TEXT_HandyRefAppName
     End If
     
 End Sub
@@ -226,9 +242,10 @@ Public Sub HandyRef_About_RibbonFun(ByVal control As IRibbonControl)
 End Sub
 
 Public Sub HandyRef_About()
-
-    MsgBox TEXT_HandyRefAppName + vbCrLf + TEXT_HandyRefDescription + vbCrLf + TEXT_NonCommecialPrompt + vbCrLf + vbCrLf + TEXT_HandyRefAuthor + vbCrLf + TEXT_VersionPrompt + HandyRefVersion + vbCrLf + TEXT_HandyRefGithubUrl, vbOKOnly, TEXT_HandyRefAppName
-
+    MsgBox TEXT_HandyRefAppName + vbCrLf + TEXT_HandyRefDescription + vbCrLf + TEXT_NonCommecialPrompt + vbCrLf + vbCrLf + TEXT_HandyRefAuthor + vbCrLf + TEXT_VersionPrompt + HandyRefVersion + vbCrLf + TEXT_HandyRefGithubUrl, vbOKOnly + vbInformation, TEXT_HandyRefAppName
 End Sub
 
+Public Sub HandyRef_GetLatestVersion_RibbonFun(ByVal control As IRibbonControl)
+    Shell "explorer.exe " & TEXT_HandyRefGithubUrl
+End Sub
 
