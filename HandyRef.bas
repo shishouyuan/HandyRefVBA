@@ -18,14 +18,18 @@
 '步骤2：选中想要插入交插引用的地方然后执行宏 InsertCrossReferenceField。
 
 
-Const HandyRefVersion = "20210520.0940"
+Const HandyRefVersion = "20210520.1434"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
 
 
-#Const HandyRef_Lang = "zh-cn"
+Const BookmarkPrefix = "_HandyRef"
+Const RefBrokenCommentTitle = "$HANDYREF_REFERENCE_BROKEN_COMMENT$"
 
+#Const HandyRef_Lang = "en-us"
+
+Const BrokenRefNumPosHolder = "#"  '数量占位符
 #If HandyRef_Lang = "zh-cn" Then
 
     Const TEXT_HandyRefAppName = "HandyRef-快引"
@@ -36,21 +40,29 @@ Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
     Const TEXT_InsertCrossReferenceField_CannotCrossFile = "不支持跨文件引用!"
     Const TEXT_VersionPrompt = "版本："
     Const TEXT_NonCommecialPrompt = "仅限非商业用途"
+    Const TEXT_RefBrokenComment = "引用源丢失！"
+    Const TEXT_BrokenRefFoundPrompt = "发现了 " & BrokenRefNumPosHolder & " 个损坏的引用，已为其添加批注。"
+    Const TEXT_NoBrokenRefFoundPrompt = "没有发现损坏的索引。"
+    Const TEXT_RefBrokenCommentClearedPrompt = "引用损坏批注已清除。"
 
 #Else
 
     Const TEXT_HandyRefAppName = "HandyRef"
     Const TEXT_HandyRefAuthor = "Shouyuan Shi @ South China University of Technology"
     Const TEXT_HandyRefDescription = "Provide a handy way to insert Cross Reference in MS Word."
-    Const TEXT_CreateReferencePoint_NothingSelected = "Nothing Selected!"
-    Const TEXT_InsertCrossReferenceField_NoRefPoint = "No Reference Point selected!"
-    Const TEXT_InsertCrossReferenceField_CannotCrossFile = "Cross file reference not supported!"
+    Const TEXT_CreateReferencePoint_NothingSelected = "Nothing selected!"
+    Const TEXT_InsertCrossReferenceField_NoRefPoint = "No Reference Point Selected!"
+    Const TEXT_InsertCrossReferenceField_CannotCrossFile = "Cross file reference is not supported!"
     Const TEXT_VersionPrompt = "Version: "
     Const TEXT_NonCommecialPrompt = "Only for NON-COMMERCIAL use."
-
+    Const TEXT_RefBrokenComment = "Reference Broken!"
+    Const TEXT_BrokenRefFoundPrompt = BrokenRefNumPosHolder & " broken reference found, and comments are attached."
+    Const TEXT_NoBrokenRefFoundPrompt = "No broken reference found."
+    Const TEXT_RefBrokenCommentClearedPrompt = "Reference broken comments cleared."
+    
 #End If
 
-Const BookmarkPrefix = "_HandyRef"
+
 Public selectedBM As Bookmark
 Public lastBMRefered As Boolean
 
@@ -133,6 +145,81 @@ noRefPointPrompt:
     End If
 End Sub
 
+Public Sub HandyRef_ClearRefBrokenComment_RibbonFun(ByVal control As IRibbonControl)
+    HandyRef_ClearRefBrokenComment
+    MsgBox TEXT_RefBrokenCommentClearedPrompt, vbOKOnly, TEXT_HandyRefAppName
+End Sub
+
+Public Sub HandyRef_ClearRefBrokenComment()
+    Dim cmt As Comment
+    Dim s As String
+    For Each cmt In ActiveDocument.Comments
+        s = cmt.Range.Paragraphs.Last.Range.Text
+        s = Replace(s, vbCr, "")
+        s = Replace(s, vbLf, "")
+        If StrComp(s, RefBrokenCommentTitle) = 0 Then
+            cmt.DeleteRecursively
+        End If
+    Next cmt
+End Sub
+ 
+Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
+    HandyRef_CheckForBrokenRef
+End Sub
+
+Public Sub HandyRef_CheckForBrokenRef()
+
+    HandyRef_ClearRefBrokenComment
+    
+    Dim refRegExp As Object
+    Set refRegExp = CreateObject("VBScript.RegExp")
+    With refRegExp
+        .Global = False
+        .IgnoreCase = True
+        .Pattern = "\s*REF\s+([^\s]+)\s*.*"
+    End With
+    
+    Dim brokenCount As Integer
+    brokenCount = 0
+    
+    Dim fd As Field
+    Dim bmName As String
+    Dim cmt As Comment
+    For Each fd In ActiveDocument.Fields
+        If fd.Type = wdFieldRef Then
+            Set r = refRegExp.Execute(fd.Code.Text)
+            If r.Count > 0 Then
+                bmName = r.Item(0).SubMatches(0)
+                If Not ActiveDocument.Bookmarks.Exists(bmName) Then
+                
+                    brokenCount = brokenCount + 1
+                    
+                    Set cmt = fd.Code.Comments.Add(fd.Code)
+                    With cmt.Range
+                        .InsertAfter TEXT_RefBrokenComment
+                        .InsertParagraphAfter
+                        .InsertAfter RefBrokenCommentTitle
+                    End With
+                    
+                    With cmt.Range.Paragraphs.First.Range
+                        .Bold = True
+                        .HighlightColorIndex = wdYellow
+                    End With
+                   
+                End If
+            End If
+        End If
+    Next fd
+    
+    If brokenCount = 0 Then
+        MsgBox TEXT_NoBrokenRefFoundPrompt, vbOKOnly, TEXT_HandyRefAppName
+    Else
+        MsgBox Replace(TEXT_BrokenRefFoundPrompt, BrokenRefNumPosHolder, CStr(brokenCount)), vbOKOnly, TEXT_HandyRefAppName
+    End If
+    
+End Sub
+
+
 
 Public Sub HandyRef_About_RibbonFun(ByVal control As IRibbonControl)
     HandyRef_About
@@ -143,4 +230,5 @@ Public Sub HandyRef_About()
     MsgBox TEXT_HandyRefAppName + vbCrLf + TEXT_HandyRefDescription + vbCrLf + TEXT_NonCommecialPrompt + vbCrLf + vbCrLf + TEXT_HandyRefAuthor + vbCrLf + TEXT_VersionPrompt + HandyRefVersion + vbCrLf + TEXT_HandyRefGithubUrl, vbOKOnly, TEXT_HandyRefAppName
 
 End Sub
+
 
