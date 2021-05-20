@@ -18,13 +18,13 @@
 '步骤2：选中想要插入交插引用的地方然后执行宏 InsertCrossReferenceField。
 
 
-Const HandyRefVersion = "20210519.1715"
+Const HandyRefVersion = "20210520.0940"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
 
 
-#Const HandyRef_Lang = "en-us"
+#Const HandyRef_Lang = "zh-cn"
 
 #If HandyRef_Lang = "zh-cn" Then
 
@@ -50,7 +50,7 @@ Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
 #End If
 
-
+Const BookmarkPrefix = "_HandyRef"
 Public selectedBM As Bookmark
 Public lastBMRefered As Boolean
 
@@ -62,9 +62,8 @@ End Sub
 Public Sub HandyRef_CreateReferencePoint()
     
     Dim rg As Range
-    Dim doc As Document
     Set rg = Application.Selection.Range
-    Set doc = rg.Document
+
      
     If rg.End - rg.Start = 0 Then
         MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly, TEXT_HandyRefAppName
@@ -75,7 +74,7 @@ Public Sub HandyRef_CreateReferencePoint()
         If Not Application.IsObjectValid(selectedBM) Then
             Set selectedBM = Nothing    'set to Nothing when the bookmark is deleted by user
         ElseIf rg.IsEqual(selectedBM.Range) Then
-            Exit Sub  'same range, thus the same bookmark returned
+            Exit Sub  'same range, thus the same bookmark remained
         Else
             If Not lastBMRefered Then
                 selectedBM.Delete   'delete unreferenced bookmark
@@ -86,23 +85,25 @@ Public Sub HandyRef_CreateReferencePoint()
 
     Dim oldbm As Bookmark
     Dim bmi As Bookmark
+    Dim bmShowHiddenOld As Boolean
+    bmShowHiddenOld = rg.Bookmarks.ShowHidden
     
     'search for existing bookmark reference the same range
-    doc.Bookmarks.ShowHidden = True
-    For Each bmi In doc.Bookmarks
-        If bmi.Range.IsEqual(rg) Then
+    rg.Bookmarks.ShowHidden = True
+    For Each bmi In rg.Bookmarks
+        If bmi.Range.IsEqual(rg) And bmi.Name Like BookmarkPrefix & "#*" Then
             Set oldbm = bmi
             Exit For
         End If
     Next bmi
-    doc.Bookmarks.ShowHidden = False
+    rg.Bookmarks.ShowHidden = bmShowHiddenOld
     
     If Not oldbm Is Nothing Then
         Set selectedBM = oldbm
         lastBMRefered = True
     Else
         'create new bookmark using timestamp as its name
-        Set selectedBM = doc.Bookmarks.Add("_HandyRef" & CLngLng(Now * 1000000), rg)
+        Set selectedBM = rg.Bookmarks.Add(BookmarkPrefix & CLngLng(Now * 1000000), rg)
         lastBMRefered = False
     End If
     
