@@ -1,6 +1,6 @@
 # English Version
 ## Introduction
-&ensp;&ensp;&ensp;&ensp;HandyRef provides a handy way to insert Cross Reference in MS Word, just like copy and paste. "Copy" what you want to reference and "paste" it at the point where cross reference is needed. HandyRef abandons the long list for selecting reference items that MS Word uses and greatly speeds up the cross-reference process. HandyRef can also find broken references in the document and attach comments to them. HandyRef provides Ribbon and keyboard shortcut for the user. Picture below shows the Ribbon that integrated in MS Word "Reference" Ribbon tab. By the way, HandyRef is open-source.
+&ensp;&ensp;&ensp;&ensp;HandyRef provides **a handy way to insert Cross Reference in MS Word**, just like copy and paste. "Copy" what you want to reference and "paste" it at the point where cross reference is needed. HandyRef abandons the long list for selecting reference items that MS Word uses and greatly speeds up the cross-reference process. HandyRef can also **find broken references in the document and attach comments to them**. HandyRef provides Ribbon and keyboard shortcut for the user. Picture below shows the Ribbon that integrated in MS Word "Reference" Ribbon tab. By the way, HandyRef is open-source.
 
 ![1-1.png](Docs/images/en/1-1.png "HandyRef integrated in the 'Reference' tab")
 
@@ -27,7 +27,7 @@
 
 # 中文版
 ## “HandyRef-快引”简介
-&ensp;&ensp;&ensp;&ensp;“HandyRef-快引”为Word提供一个快速添加交叉引用的方式，整个流程类似于复制粘贴：先“复制”要引用的内容，然后在需要交叉引用的地方“粘贴”即可。“HandyRef-快引”改变了Word交叉引用操作需要在冗长的被引对象列表中选取的操作方式，极大提高了工作效率。“HandyRef-快引”还可以查找文档中损坏的交叉引用并添加提示批注。“HandyRef-快引”提个供了工具栏和键盘快捷键两种使用方式，下图展示了集成到Word“引用”选项卡中的“HandyRef-快引”。“HandyRef-快引”是开源的，用户可以浏览其代码以确保没有安全隐患。
+&ensp;&ensp;&ensp;&ensp;“HandyRef-快引”**为Word提供一个快速添加交叉引用的方式**，整个流程类似于复制粘贴：先“复制”要引用的内容，然后在需要交叉引用的地方“粘贴”即可。“HandyRef-快引”改变了Word交叉引用操作需要在冗长的被引对象列表中选取的操作方式，极大提高了工作效率。“HandyRef-快引”还可以**查找文档中损坏的交叉引用并添加提示批注**。“HandyRef-快引”提个供了工具栏和键盘快捷键两种使用方式，下图展示了集成到Word“引用”选项卡中的“HandyRef-快引”。“HandyRef-快引”是开源的，用户可以浏览其代码以确保没有安全隐患。
 
 ![1-1.png](Docs/images/zh/1-1.png "位于“引用”选项卡中的“HandyRef-快引”工具栏")
 
