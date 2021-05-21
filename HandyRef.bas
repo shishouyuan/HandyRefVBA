@@ -12,7 +12,7 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210521.1502"
+Const HandyRefVersion = "20210521.2122"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -187,13 +187,15 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
 
     HandyRef_ClearRefBrokenComment checkingRange
     
-    Dim refRegExp As Object
-    Set refRegExp = CreateObject("VBScript.RegExp")
-    With refRegExp
-        .Global = False
-        .IgnoreCase = True
-        .Pattern = "\s*REF\s+([^\s]+)\s*.*"
-    End With
+    Static refRegExp As Object
+    If refRegExp Is Nothing Then
+        Set refRegExp = CreateObject("VBScript.RegExp")
+        With refRegExp
+            .Global = False
+            .IgnoreCase = True
+            .Pattern = "\s*REF\s+([^\s]+)\s*.*"
+        End With
+    End If
     
     Dim brokenCount As Integer
     brokenCount = 0
