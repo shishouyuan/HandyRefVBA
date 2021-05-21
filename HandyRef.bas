@@ -12,7 +12,7 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210521.0129"
+Const HandyRefVersion = "20210521.1502"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -36,7 +36,7 @@ Const BrokenRefNumPosHolder = "#"  '数量占位符
     Const TEXT_BrokenRefFoundPrompt = "发现了 " & BrokenRefNumPosHolder & " 个损坏的引用，已为其添加批注。"
     Const TEXT_NoBrokenRefFoundPrompt = "没有发现损坏的引用。"
     Const TEXT_RefBrokenCommentClearedPrompt = "引用损坏批注已清除。"
-    Const TEXT_RefCheckingForWholeDocPrompt = "当前没有选中的内容，检查整个文档吗？" & vbCrLf & "这可能会需要一些时间。"
+    Const TEXT_RefCheckingForWholeDocPrompt = "当前没有选中的内容，检查整个文档吗？" & vbCrLf & "这可能需要一些时间。"
     Const TEXT_ClearRefBrokenCommentForWholeDocPrompt = "当前没有选中的内容，清除整个文档中的引用损坏批注吗？"
 
 #Else
@@ -125,7 +125,7 @@ Public Sub HandyRef_InsertCrossReferenceField()
     If Not selectedBM Is Nothing Then
         If Application.IsObjectValid(selectedBM) Then
             If selectedBM.Parent Is ActiveDocument Then
-                ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name
+                ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
                 lastBMRefered = True
             Else
                 MsgBox TEXT_InsertCrossReferenceField_CannotCrossFile, vbOKOnly + vbInformation, TEXT_HandyRefAppName
