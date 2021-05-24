@@ -12,7 +12,7 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210524.1120"
+Const HandyRefVersion = "20210524.1259"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -21,7 +21,8 @@ Const RefBrokenCommentTitle = "$HANDYREF_REFERENCE_BROKEN_COMMENT$"
 
 #Const HandyRef_Lang = "en-us"
 
-Const BrokenRefNumPosHolder = "#"  '数量占位符
+Const BrokenRefNumPosHolder = "#"
+
 #If HandyRef_Lang = "zh-cn" Then
 
     Const TEXT_HandyRefAppName = "HandyRef-快引"
@@ -38,11 +39,12 @@ Const BrokenRefNumPosHolder = "#"  '数量占位符
     Const TEXT_RefBrokenCommentClearedPrompt = "引用损坏批注已清除。"
     Const TEXT_RefCheckingForWholeDocPrompt = "当前没有选中的内容，检查整个文档吗？" & vbCrLf & "这可能需要一些时间。"
     Const TEXT_ClearRefBrokenCommentForWholeDocPrompt = "当前没有选中的内容，清除整个文档中的引用损坏批注吗？"
-    
+    Const TEXT_UnknownErrOccurredPrompt = "遇到错误："
     Const TEXT_ActionName_CreateSource = "创建引用源"
     Const TEXT_ActionName_InsertReference = "交叉引用"
     Const TEXT_ActionName_CheckReference = "检查引用"
     Const TEXT_ActionName_ClearRefBrokenComment = "清除批注"
+    
 
 #Else
 
@@ -60,11 +62,12 @@ Const BrokenRefNumPosHolder = "#"  '数量占位符
     Const TEXT_RefBrokenCommentClearedPrompt = "Reference broken comments cleared."
     Const TEXT_RefCheckingForWholeDocPrompt = "Nothing is selected. Check the whole document?" & vbCrLf & "This may take a while."
     Const TEXT_ClearRefBrokenCommentForWholeDocPrompt = "Nothing is selected. Clear reference broken comments for the whole document?"
-    
+    Const TEXT_UnknownErrOccurredPrompt = "Error occurred:"
     Const TEXT_ActionName_CreateSource = "Create Source"
     Const TEXT_ActionName_InsertReference = "Insert Reference"
     Const TEXT_ActionName_CheckReference = "Check Reference"
     Const TEXT_ActionName_ClearRefBrokenComment = "Clear Comments"
+    
 #End If
 
 
@@ -75,12 +78,17 @@ Private Function FormatUndoRecordText(s As String) As String
     FormatUndoRecordText = s & "-" & TEXT_HandyRefAppName
 End Function
 
+Private Sub ShowUnknowErrorPrompt(e As ErrObject)
+    MsgBox TEXT_UnknownErrOccurredPrompt & vbCrLf & e.Description, vbOKOnly + vbExclamation, TEXT_HandyRefAppName
+End Sub
+
 Public Sub HandyRef_CreateReferencePoint_RibbonFun(ByVal control As IRibbonControl) ' wrap the function to match the signature called by ribbion
     HandyRef_CreateReferencePoint
 End Sub
 
 Public Sub HandyRef_CreateReferencePoint()
     Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_CreateSource)
+    On Error GoTo errHandle
     
     Dim rg As Range
     Set rg = Application.Selection.Range
@@ -130,6 +138,12 @@ Public Sub HandyRef_CreateReferencePoint()
     
 exitSub:
     Application.UndoRecord.EndCustomRecord
+    Exit Sub
+    
+errHandle:
+    ShowUnknowErrorPrompt err
+    GoTo exitSub
+    
 End Sub
 
 
@@ -139,6 +153,7 @@ End Sub
 
 Public Sub HandyRef_InsertCrossReferenceField()
     Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_InsertReference)
+    On Error GoTo errHandle
     
     If Not selectedBM Is Nothing Then
         If Application.IsObjectValid(selectedBM) Then
@@ -157,7 +172,14 @@ noRefPointPrompt:
         MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
     End If
     
+exitSub:
     Application.UndoRecord.EndCustomRecord
+    Exit Sub
+    
+errHandle:
+    ShowUnknowErrorPrompt err
+    GoTo exitSub
+    
 End Sub
 
 Public Sub HandyRef_ClearRefBrokenComment_RibbonFun(ByVal control As IRibbonControl)
@@ -177,6 +199,7 @@ End Sub
 
 Public Sub HandyRef_ClearRefBrokenComment(targetRange As Range)
     Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_ClearRefBrokenComment)
+    On Error GoTo errHandle
     
     Dim cmt As Comment
     Dim s As String
@@ -193,7 +216,14 @@ Public Sub HandyRef_ClearRefBrokenComment(targetRange As Range)
         End If
     Next cmt
     
+exitSub:
     Application.UndoRecord.EndCustomRecord
+    Exit Sub
+    
+errHandle:
+    ShowUnknowErrorPrompt err
+    GoTo exitSub
+    
 End Sub
  
 Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
@@ -209,6 +239,7 @@ End Sub
 
 Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_CheckReference)
+    On Error GoTo errHandle
     
     HandyRef_ClearRefBrokenComment checkingRange
     
@@ -260,7 +291,13 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
         MsgBox Replace(TEXT_BrokenRefFoundPrompt, BrokenRefNumPosHolder, CStr(brokenCount)), vbOKOnly + vbInformation, TEXT_HandyRefAppName
     End If
     
+exitSub:
     Application.UndoRecord.EndCustomRecord
+    Exit Sub
+    
+errHandle:
+    ShowUnknowErrorPrompt err
+    GoTo exitSub
     
 End Sub
 
@@ -281,6 +318,14 @@ Public Sub HandyRef_About()
 End Sub
 
 Public Sub HandyRef_GetLatestVersion_RibbonFun(ByVal control As IRibbonControl)
+    On Error GoTo errHandle
+       
     Shell "explorer.exe " & TEXT_HandyRefGithubUrl
+    
+    Exit Sub
+    
+errHandle:
+    ShowUnknowErrorPrompt err
+    
 End Sub
 
