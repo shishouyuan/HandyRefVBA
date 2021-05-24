@@ -12,7 +12,7 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210521.2122"
+Const HandyRefVersion = "20210524.1120"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -38,6 +38,11 @@ Const BrokenRefNumPosHolder = "#"  '数量占位符
     Const TEXT_RefBrokenCommentClearedPrompt = "引用损坏批注已清除。"
     Const TEXT_RefCheckingForWholeDocPrompt = "当前没有选中的内容，检查整个文档吗？" & vbCrLf & "这可能需要一些时间。"
     Const TEXT_ClearRefBrokenCommentForWholeDocPrompt = "当前没有选中的内容，清除整个文档中的引用损坏批注吗？"
+    
+    Const TEXT_ActionName_CreateSource = "创建引用源"
+    Const TEXT_ActionName_InsertReference = "交叉引用"
+    Const TEXT_ActionName_CheckReference = "检查引用"
+    Const TEXT_ActionName_ClearRefBrokenComment = "清除批注"
 
 #Else
 
@@ -50,23 +55,32 @@ Const BrokenRefNumPosHolder = "#"  '数量占位符
     Const TEXT_VersionPrompt = "Version: "
     Const TEXT_NonCommecialPrompt = "Only for NON-COMMERCIAL use."
     Const TEXT_RefBrokenComment = "Reference Broken!"
-    Const TEXT_BrokenRefFoundPrompt = BrokenRefNumPosHolder & " broken reference found, and comments are attached."
+    Const TEXT_BrokenRefFoundPrompt = BrokenRefNumPosHolder & " broken reference found. Comments are attached."
     Const TEXT_NoBrokenRefFoundPrompt = "No broken reference found."
     Const TEXT_RefBrokenCommentClearedPrompt = "Reference broken comments cleared."
     Const TEXT_RefCheckingForWholeDocPrompt = "Nothing is selected. Check the whole document?" & vbCrLf & "This may take a while."
     Const TEXT_ClearRefBrokenCommentForWholeDocPrompt = "Nothing is selected. Clear reference broken comments for the whole document?"
+    
+    Const TEXT_ActionName_CreateSource = "Create Source"
+    Const TEXT_ActionName_InsertReference = "Insert Reference"
+    Const TEXT_ActionName_CheckReference = "Check Reference"
+    Const TEXT_ActionName_ClearRefBrokenComment = "Clear Comments"
 #End If
 
 
 Public selectedBM As Bookmark
 Public lastBMRefered As Boolean
 
+Private Function FormatUndoRecordText(s As String) As String
+    FormatUndoRecordText = s & "-" & TEXT_HandyRefAppName
+End Function
 
 Public Sub HandyRef_CreateReferencePoint_RibbonFun(ByVal control As IRibbonControl) ' wrap the function to match the signature called by ribbion
     HandyRef_CreateReferencePoint
 End Sub
 
 Public Sub HandyRef_CreateReferencePoint()
+    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_CreateSource)
     
     Dim rg As Range
     Set rg = Application.Selection.Range
@@ -74,14 +88,14 @@ Public Sub HandyRef_CreateReferencePoint()
      
     If rg.End - rg.Start = 0 Then
         MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly + vbInformation, TEXT_HandyRefAppName
-        Exit Sub
+        GoTo exitSub
     End If
    
     If Not selectedBM Is Nothing Then
         If Not Application.IsObjectValid(selectedBM) Then
             Set selectedBM = Nothing    'set to Nothing when the bookmark is deleted by user
         ElseIf rg.IsEqual(selectedBM.Range) Then
-            Exit Sub  'same range, thus the same bookmark remained
+            GoTo exitSub  'same range, thus the same bookmark remained
         Else
             If Not lastBMRefered Then
                 selectedBM.Delete   'delete unreferenced bookmark
@@ -114,6 +128,8 @@ Public Sub HandyRef_CreateReferencePoint()
         lastBMRefered = False
     End If
     
+exitSub:
+    Application.UndoRecord.EndCustomRecord
 End Sub
 
 
@@ -122,6 +138,8 @@ Public Sub HandyRef_InsertCrossReferenceField_RibbonFun(ByVal control As IRibbon
 End Sub
 
 Public Sub HandyRef_InsertCrossReferenceField()
+    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_InsertReference)
+    
     If Not selectedBM Is Nothing Then
         If Application.IsObjectValid(selectedBM) Then
             If selectedBM.Parent Is ActiveDocument Then
@@ -138,6 +156,8 @@ Public Sub HandyRef_InsertCrossReferenceField()
 noRefPointPrompt:
         MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
     End If
+    
+    Application.UndoRecord.EndCustomRecord
 End Sub
 
 Public Sub HandyRef_ClearRefBrokenComment_RibbonFun(ByVal control As IRibbonControl)
@@ -156,6 +176,8 @@ Public Sub HandyRef_ClearRefBrokenComment_RibbonFun(ByVal control As IRibbonCont
 End Sub
 
 Public Sub HandyRef_ClearRefBrokenComment(targetRange As Range)
+    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_ClearRefBrokenComment)
+    
     Dim cmt As Comment
     Dim s As String
     For Each cmt In targetRange.Comments
@@ -170,6 +192,8 @@ Public Sub HandyRef_ClearRefBrokenComment(targetRange As Range)
             End If
         End If
     Next cmt
+    
+    Application.UndoRecord.EndCustomRecord
 End Sub
  
 Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
@@ -184,7 +208,8 @@ Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
 End Sub
 
 Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
-
+    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_CheckReference)
+    
     HandyRef_ClearRefBrokenComment checkingRange
     
     Static refRegExp As Object
@@ -235,6 +260,8 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
         MsgBox Replace(TEXT_BrokenRefFoundPrompt, BrokenRefNumPosHolder, CStr(brokenCount)), vbOKOnly + vbInformation, TEXT_HandyRefAppName
     End If
     
+    Application.UndoRecord.EndCustomRecord
+    
 End Sub
 
 
@@ -244,7 +271,13 @@ Public Sub HandyRef_About_RibbonFun(ByVal control As IRibbonControl)
 End Sub
 
 Public Sub HandyRef_About()
-    MsgBox TEXT_HandyRefAppName + vbCrLf + TEXT_HandyRefDescription + vbCrLf + TEXT_NonCommecialPrompt + vbCrLf + vbCrLf + TEXT_HandyRefAuthor + vbCrLf + TEXT_VersionPrompt + HandyRefVersion + vbCrLf + TEXT_HandyRefGithubUrl, vbOKOnly + vbInformation, TEXT_HandyRefAppName
+    MsgBox TEXT_HandyRefAppName + vbCrLf _
+    + TEXT_HandyRefDescription + vbCrLf _
+    + TEXT_NonCommecialPrompt + vbCrLf + vbCrLf _
+    + TEXT_VersionPrompt + HandyRefVersion + vbCrLf _
+    + TEXT_HandyRefAuthor + vbCrLf _
+    + TEXT_HandyRefGithubUrl, _
+    vbOKOnly + vbInformation, TEXT_HandyRefAppName
 End Sub
 
 Public Sub HandyRef_GetLatestVersion_RibbonFun(ByVal control As IRibbonControl)
