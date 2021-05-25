@@ -1,3 +1,21 @@
+- [English Version](#english-version)
+  - [Introduction](#introduction)
+  - [HandyRef Step by Step](#handyref-step-by-step)
+    - [Insert Cross Reference](#insert-cross-reference)
+    - [Check for Broken Reference](#check-for-broken-reference)
+  - [Setup of HandyRef](#setup-of-handyref)
+    - [Install HandyRef Globally](#install-handyref-globally)
+    - [Temporarily Use of HandyRef](#temporarily-use-of-handyref)
+  - [Claims](#claims)
+- [中文版](#中文版)
+  - [“HandyRef-快引”简介](#handyref-快引简介)
+  - [“HandyRef-快引”操作步骤](#handyref-快引操作步骤)
+    - [添加交叉引用](#添加交叉引用)
+    - [检查引用错误](#检查引用错误)
+  - [“HandyRef-快引”的安装](#handyref-快引的安装)
+    - [全局安装“HandyRef-快引”](#全局安装handyref-快引)
+    - [单次使用“HandyRef-快引”](#单次使用handyref-快引)
+  - [声明](#声明)
 # English Version
 ## Introduction
 &ensp;&ensp;&ensp;&ensp;HandyRef provides **a handy way to insert Cross Reference in MS Word**, just like copy and paste. "Copy" what you want to reference and "paste" it at the point where cross reference is needed. HandyRef abandons the long list for selecting reference items that MS Word uses and greatly speeds up the cross-reference process. HandyRef can also **find broken references in the document and attach comments to them**. HandyRef provides Ribbon and keyboard shortcut for the user. Picture below shows the Ribbon that integrated in MS Word "Reference" Ribbon tab. By the way, HandyRef is open-source.
