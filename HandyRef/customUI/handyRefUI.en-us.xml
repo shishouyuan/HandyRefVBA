@@ -1,16 +1,16 @@
- <customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui"> 
-   <ribbon> 
-     <tabs> 
-       <tab idMso="TabReferences"> 
-         <group id="HandyRefGroup" label="HandyRef"> 
-           <button id="HandyRef_CreateReferencePoint_Button" label="Create Source" screentip="Create Reference Source Point (Ctrl+Alt+C)" size="large" imageMso="TableOfContentsAddTextGallery" onAction="HandyRef_CreateReferencePoint_RibbonFun" /> 
-           <button id="HandyRef_InsertCrossReferenceField_Button" label="Insert Reference" screentip="Insert Cross Reference (Ctrl+Alt+V)"  size="large" imageMso="CrossReferenceInsert"  onAction="HandyRef_InsertCrossReferenceField_RibbonFun" /> 
-           <button id="HandyRef_CheckForBrokenRef_Button" label="Check Reference" screentip="Check for broken reference in the document and add comments for them"  size="large" imageMso="ErrorChecking"  onAction="HandyRef_CheckForBrokenRef_RibbonFun" /> 
-           <button id="HandyRef_ClearRefBrokenComment_Button" label="Clear Comments" screentip="Clear all reference broken comments"  size="normal" imageMso="Clear"  onAction="HandyRef_ClearRefBrokenComment_RibbonFun" /> 
-           <button id="HandyRef_GetLatestVersion_Button" label="Latest Vesion" screentip="Open webpage to get the latest version"  size="normal" imageMso="Refresh" onAction="HandyRef_GetLatestVersion_RibbonFun" />
-           <button id="HandyRef_About_Button" label="About HandyRef" size="normal" imageMso="Info"  onAction="HandyRef_About_RibbonFun" /> 
-         </group > 
-       </tab> 
-     </tabs> 
-   </ribbon> 
- </customUI> 
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui" onLoad="HandyRef_OnLoad">
+  <ribbon>
+    <tabs>
+      <tab idMso="TabReferences">
+        <group id="HandyRefGroup" label="HandyRef" imageMso="CrossReferenceInsert">
+          <button id="HandyRef_CreateReferencePoint_Button" label="Create Source" screentip="Create Reference Source Point (Ctrl+Alt+C)" size="large" imageMso="TableOfContentsAddTextGallery" onAction="HandyRef_CreateReferencePoint_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <button id="HandyRef_InsertCrossReferenceField_Button" label="Insert Reference" screentip="Insert Cross Reference (Ctrl+Alt+V)" size="large" imageMso="CrossReferenceInsert" onAction="HandyRef_InsertCrossReferenceField_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <button id="HandyRef_CheckForBrokenRef_Button" label="Check Reference" screentip="Check for broken reference in the document and add comments for them" size="large" imageMso="ErrorChecking" onAction="HandyRef_CheckForBrokenRef_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <button id="HandyRef_ClearRefBrokenComment_Button" label="Clear Comments" screentip="Clear all reference broken comments" size="normal" imageMso="Clear" onAction="HandyRef_ClearRefBrokenComment_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <button id="HandyRef_GetLatestVersion_Button" label="Latest Vesion" screentip="Open webpage to get the latest version" size="normal" imageMso="Refresh" onAction="HandyRef_GetLatestVersion_RibbonFun" />
+          <button id="HandyRef_About_Button" label="About HandyRef" size="normal" imageMso="Info" onAction="HandyRef_About_RibbonFun" />
+        </group >
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI> 

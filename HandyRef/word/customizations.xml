@@ -3,10 +3,10 @@
     xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml">
     <wne:keymaps>
         <wne:keymap wne:kcmPrimary="0643">
-            <wne:macro wne:macroName="HandyRef.Main.HandyRef_CreateReferencePoint"/>
+            <wne:macro wne:macroName="HandyRef_CreateReferencePoint"/>
         </wne:keymap>
         <wne:keymap wne:kcmPrimary="0656">
-            <wne:macro wne:macroName="HandyRef.Main.HandyRef_InsertCrossReferenceField"/>
+            <wne:macro wne:macroName="HandyRef_InsertCrossReferenceField"/>
         </wne:keymap>
     </wne:keymaps>
 </wne:tcg>

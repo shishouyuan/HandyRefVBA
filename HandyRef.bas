@@ -12,7 +12,7 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210524.1259"
+Const HandyRefVersion = "20210616.1916.VBA"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -70,9 +70,30 @@ Const BrokenRefNumPosHolder = "#"
     
 #End If
 
+Private selectedBM As Bookmark
+Private lastBMRefered As Boolean
 
-Public selectedBM As Bookmark
-Public lastBMRefered As Boolean
+Private ribbonUI As IRibbonUI
+Private helper As helper
+Public Sub HandyRef_OnLoad(ByVal rb As IRibbonUI)
+    Set ribbonUI = rb
+    Set helper = New helper
+    Set helper.App = Application
+End Sub
+
+Public Sub HandyRef_UpdateRibbonState()
+    ribbonUI.Invalidate
+End Sub
+
+Public Sub HandyRef_GetEnabled(ByVal control As IRibbonControl, ByRef enabled)
+    On Error GoTo nodoc
+    enabled = Not Application.ActiveWindow.Document Is Nothing
+    Exit Sub
+    
+nodoc:
+    enabled = False
+End Sub
+
 
 Private Function FormatUndoRecordText(s As String) As String
     FormatUndoRecordText = s & "-" & TEXT_HandyRefAppName
@@ -288,7 +309,10 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     If brokenCount = 0 Then
         MsgBox TEXT_NoBrokenRefFoundPrompt, vbOKOnly + vbInformation, TEXT_HandyRefAppName
     Else
+        
         MsgBox Replace(TEXT_BrokenRefFoundPrompt, BrokenRefNumPosHolder, CStr(brokenCount)), vbOKOnly + vbInformation, TEXT_HandyRefAppName
+        ActiveWindow.View.SplitSpecial = wdPaneNone
+        ActiveWindow.View.SplitSpecial = wdPaneRevisions
     End If
     
 exitSub:
