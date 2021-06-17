@@ -12,7 +12,7 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210616.1916.VBA"
+Const HandyRefVersion = "20210617.2006.VBA"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -70,9 +70,8 @@ Const BrokenRefNumPosHolder = "#"
     
 #End If
 
-Public selectedRange As Range
+Private selectedRange As Range
 Private selectedBM As Bookmark
-'Private lastBMRefered As Boolean
 
 Private ribbonUI As IRibbonUI
 Private helper As helper
@@ -137,29 +136,39 @@ Private Function GetTimeStamp() As String
     GetTimeStamp = Replace(CStr(CDbl(Now)), ".", "")
 End Function
 
+
 Public Sub HandyRef_InsertCrossReferenceField()
-    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_InsertReference)
     On Error GoTo errHandle
+    
+    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_InsertReference)
+    
+    Dim bmValid As Boolean
+    bmValid = False
     
     If Not selectedBM Is Nothing Then
         If Application.IsObjectValid(selectedBM) Then
             If selectedBM.Parent Is ActiveDocument Then
-insertRef:
-                ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
+                bmValid = True
             Else
+crossFile:
                 MsgBox TEXT_InsertCrossReferenceField_CannotCrossFile, vbOKOnly + vbInformation, TEXT_HandyRefAppName
+                GoTo exitSub
             End If
-        Else
+        Else ' it's possible the bookmark is deleted by the user, but the range remaind.
             Set selectedBM = Nothing
-            GoTo noBookmark
         End If
-    Else
-noBookmark:
-        If Not selectedRange Is Nothing Then
-            If Not Application.IsObjectValid(selectedRange) Or selectedRange.Start = selectedRange.End Then
-                Set selectedRange = Nothing
-                GoTo noRange
-            End If
+    End If
+    If Not bmValid Then
+        If selectedRange Is Nothing Then
+            GoTo emptyRange
+        ElseIf Not Application.IsObjectValid(selectedRange) Or selectedRange.Start = selectedRange.End Then
+emptyRange:
+            Set selectedRange = Nothing
+            MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
+            GoTo exitSub
+        ElseIf Not selectedRange.Document Is ActiveDocument Then
+            GoTo crossFile
+        Else
             Dim oldbm As Bookmark
             Dim bmi As Bookmark
             Dim bmShowHiddenOld As Boolean
@@ -181,13 +190,14 @@ noBookmark:
                 'create new bookmark using timestamp as its name
                 Set selectedBM = selectedRange.Bookmarks.Add(BookmarkPrefix & GetTimeStamp(), selectedRange)
             End If
-            GoTo insertRef
             
-        Else
-noRange:
-            MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
+            bmValid = True
         End If
 
+    End If
+    
+    If bmValid Then
+        ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
     End If
     
 exitSub:
@@ -349,4 +359,3 @@ errHandle:
     ShowUnknowErrorPrompt err
     
 End Sub
-

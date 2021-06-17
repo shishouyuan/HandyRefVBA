@@ -42,14 +42,14 @@ var TEXT_ActionName_ClearRefBrokenComment
 
 function HandyRef_OnLoad(ribbonUI) {
 
-    HandyRefVersion = "20210616.1908.JS"
+    HandyRefVersion = "20210616.2006.JS"
 
     TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
     BookmarkPrefix = "_HandyRef"
     RefBrokenCommentTitle = "$HANDYREF_REFERENCE_BROKEN_COMMENT$"
 
-    HandyRef_Lang = "en-us"
+    HandyRef_Lang = "zh-cn"
 
     BrokenRefNumPosHolder = "#"
 
@@ -76,8 +76,7 @@ function HandyRef_OnLoad(ribbonUI) {
         TEXT_ActionName_ClearRefBrokenComment = "清除批注"
 
 
-    }
-    else {
+    } else {
 
         TEXT_HandyRefAppName = "HandyRef"
         TEXT_HandyRefAuthor = "Shouyuan Shi @ South China University of Technology"
@@ -110,7 +109,7 @@ function HandyRef_GetEnabled(control) {
 
 
 var selectedBM
-var lastBMRefered
+var selectedRange
 
 
 function HandyRef_FormatUndoRecordText(s) {
@@ -126,66 +125,20 @@ function HandyRef_CreateReferencePoint_RibbonFun(control) { // wrap the function
 }
 
 function HandyRef_CreateReferencePoint() {
-    try {
-
-        Application.UndoRecord.StartCustomRecord(HandyRef_FormatUndoRecordText(TEXT_ActionName_CreateSource))
-
-        var rg = Application.Selection.Range
-        if (rg.End - rg.Start == 0) {
-
+    var rg = Application.Selection.Range
+    if(selectedRange && Application.IsObjectValid(selectedRange) && rg.IsEqual(selectedRange)){
+        return
+    }
+    else {
+        selectedBM = null
+        if (rg.End == rg.Start) {
+            selectedRange = null
             alert(TEXT_CreateReferencePoint_nullSelected)
-            return
         }
-
-        if (selectedBM) {
-            if (!Application.IsObjectValid(selectedBM)) {
-                selectedBM = null    //set to null when the bookmark is deleted by user
-            }
-            else if (rg.IsEqual(selectedBM.Range)) {
-                return  //same range, thus the same bookmark remained
-            }
-            else {
-                if (!lastBMRefered) {
-                    selectedBM.Delete   //delete unreferenced bookmark
-                    selectedBM = null
-                }
-            }
-        }
-
-        var oldbm// As Bookmark
-        var bmi// As Bookmark
-        var bmShowHiddenOld = rg.Bookmarks.ShowHidden
-
-
-        //search for existing bookmark reference the same range
-        var bmRegExp = new RegExp(BookmarkPrefix + "\\d+")
-        rg.Bookmarks.ShowHidden = true
-        for (var i = 1; i <= rg.Bookmarks.Count; i++) {
-            var bmi = rg.Bookmarks.Item(i)
-            if (bmi.Range.IsEqual(rg) && bmRegExp.test(bmi.Name)) {
-                oldbm = bmi
-                break
-            }
-        }
-        rg.Bookmarks.ShowHidden = bmShowHiddenOld
-
-        if (oldbm) {
-            selectedBM = oldbm
-            lastBMRefered = true
-        } else {
-            //create new bookmark using timestamp as its name
-            selectedBM = rg.Bookmarks.Add(BookmarkPrefix + new Date().getTime(), rg)
-            lastBMRefered = false
-
+        else {
+            selectedRange = rg
         }
     }
-    catch (err) {
-        HandyRef_ShowUnknowErrorPrompt(err.message)
-    }
-    finally {
-        Application.UndoRecord.EndCustomRecord()
-    }
-
 }
 
 
@@ -193,27 +146,66 @@ function HandyRef_InsertCrossReferenceField_RibbonFun(control) {
     HandyRef_InsertCrossReferenceField()
 }
 
+
+
 function HandyRef_InsertCrossReferenceField() {
     try {
         Application.UndoRecord.StartCustomRecord(HandyRef_FormatUndoRecordText(TEXT_ActionName_InsertReference))
+
+        var bmValid = false
         if (selectedBM) {
             if (Application.IsObjectValid(selectedBM)) {
                 if (selectedBM.Parent == ActiveDocument) {
-                    ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h")
-                    lastBMRefered = true
+                    bmValid = true
                 }
                 else {
                     alert(TEXT_InsertCrossReferenceField_CannotCrossFile)
+                    return
                 }
             }
-            else {
+            else {// it's possible the bookmark is deleted by the user, but the range remaind.
                 selectedBM = null
-                alert(TEXT_InsertCrossReferenceField_NoRefPoint)
             }
         }
-        else {
+        if (!bmValid) {
+            if (!selectedRange || !Application.IsObjectValid(selectedRange) || selectedRange.Start == selectedRange.End) {
+                selectedRange = null
+                alert(TEXT_InsertCrossReferenceField_NoRefPoint)
+                return
+            }
+            else if (selectedRange.Document != ActiveDocument) {
+                alert(TEXT_InsertCrossReferenceField_CannotCrossFile)
+                return
+            }
+            else {
+                var oldbm// As Bookmark
+                var bmShowHiddenOld = selectedRange.Bookmarks.ShowHidden
 
-            alert(TEXT_InsertCrossReferenceField_NoRefPoint)
+                //search for existing bookmark reference the same range
+                var bmRegExp = new RegExp(BookmarkPrefix + "\\d+")
+                selectedRange.Bookmarks.ShowHidden = true
+                for (var i = 1; i <= selectedRange.Bookmarks.Count; i++) {
+                    var bmi = selectedRange.Bookmarks.Item(i)
+                    if (bmi.Range.IsEqual(selectedRange) && bmRegExp.test(bmi.Name)) {
+                        oldbm = bmi
+                        break
+                    }
+                }
+                selectedRange.Bookmarks.ShowHidden = bmShowHiddenOld
+
+                if (oldbm) {
+                    selectedBM = oldbm
+                }
+                else {
+                    //create new bookmark using timestamp as its name
+                    selectedBM = selectedRange.Bookmarks.Add(BookmarkPrefix + new Date().getTime(), selectedRange)
+                }
+                bmValid = true
+
+            }
+        }
+        if (bmValid) {
+            ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h")
         }
     }
     catch (err) {
