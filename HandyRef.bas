@@ -70,8 +70,9 @@ Const BrokenRefNumPosHolder = "#"
     
 #End If
 
+Public selectedRange As Range
 Private selectedBM As Bookmark
-Private lastBMRefered As Boolean
+'Private lastBMRefered As Boolean
 
 Private ribbonUI As IRibbonUI
 Private helper As helper
@@ -86,11 +87,11 @@ Public Sub HandyRef_UpdateRibbonState()
 End Sub
 
 Public Sub HandyRef_GetEnabled(ByVal control As IRibbonControl, ByRef enabled)
-    On Error GoTo nodoc
+    On Error GoTo noDoc
     enabled = Not Application.ActiveWindow.Document Is Nothing
     Exit Sub
     
-nodoc:
+noDoc:
     enabled = False
 End Sub
 
@@ -108,62 +109,18 @@ Public Sub HandyRef_CreateReferencePoint_RibbonFun(ByVal control As IRibbonContr
 End Sub
 
 Public Sub HandyRef_CreateReferencePoint()
-    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_CreateSource)
-    On Error GoTo errHandle
-    
+
     Dim rg As Range
     Set rg = Application.Selection.Range
-
-     
-    If rg.End - rg.Start = 0 Then
-        MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly + vbInformation, TEXT_HandyRefAppName
-        GoTo exitSub
-    End If
    
-    If Not selectedBM Is Nothing Then
-        If Not Application.IsObjectValid(selectedBM) Then
-            Set selectedBM = Nothing    'set to Nothing when the bookmark is deleted by user
-        ElseIf rg.IsEqual(selectedBM.Range) Then
-            GoTo exitSub  'same range, thus the same bookmark remained
-        Else
-            If Not lastBMRefered Then
-                selectedBM.Delete   'delete unreferenced bookmark
-                Set selectedBM = Nothing
-            End If
-        End If
-    End If
-
-    Dim oldbm As Bookmark
-    Dim bmi As Bookmark
-    Dim bmShowHiddenOld As Boolean
-    bmShowHiddenOld = rg.Bookmarks.ShowHidden
-    
-    'search for existing bookmark reference the same range
-    rg.Bookmarks.ShowHidden = True
-    For Each bmi In rg.Bookmarks
-        If bmi.Range.IsEqual(rg) And bmi.Name Like BookmarkPrefix & "#*" Then
-            Set oldbm = bmi
-            Exit For
-        End If
-    Next bmi
-    rg.Bookmarks.ShowHidden = bmShowHiddenOld
-    
-    If Not oldbm Is Nothing Then
-        Set selectedBM = oldbm
-        lastBMRefered = True
+    If rg.End = rg.Start Then
+        Set selectedRange = Nothing
+        Set selectedBM = Nothing
+        MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly + vbInformation, TEXT_HandyRefAppName
     Else
-        'create new bookmark using timestamp as its name
-        Set selectedBM = rg.Bookmarks.Add(BookmarkPrefix & CLngLng(Now * 1000000), rg)
-        lastBMRefered = False
+        Set selectedRange = rg
+        Set selectedBM = Nothing
     End If
-    
-exitSub:
-    Application.UndoRecord.EndCustomRecord
-    Exit Sub
-    
-errHandle:
-    ShowUnknowErrorPrompt err
-    GoTo exitSub
     
 End Sub
 
@@ -172,6 +129,14 @@ Public Sub HandyRef_InsertCrossReferenceField_RibbonFun(ByVal control As IRibbon
     HandyRef_InsertCrossReferenceField
 End Sub
 
+Private Function GetTimeStamp() As String
+    'Date variables are stored as IEEE 64-bit (8-byte) floating-point numbers
+    'When other numeric types are converted to Date, values to the left of the decimal represent date information,
+    'while values to the right of the decimal represent time. Midnight is 0 and midday is 0.5.
+    'Double (double-precision floating-point) variables are stored as IEEE 64-bit (8-byte) floating-point numbers
+    GetTimeStamp = Replace(CStr(CDbl(Now)), ".", "")
+End Function
+
 Public Sub HandyRef_InsertCrossReferenceField()
     Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_InsertReference)
     On Error GoTo errHandle
@@ -179,18 +144,50 @@ Public Sub HandyRef_InsertCrossReferenceField()
     If Not selectedBM Is Nothing Then
         If Application.IsObjectValid(selectedBM) Then
             If selectedBM.Parent Is ActiveDocument Then
+insertRef:
                 ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
-                lastBMRefered = True
             Else
                 MsgBox TEXT_InsertCrossReferenceField_CannotCrossFile, vbOKOnly + vbInformation, TEXT_HandyRefAppName
             End If
         Else
             Set selectedBM = Nothing
-            GoTo noRefPointPrompt
+            GoTo noBookmark
         End If
     Else
-noRefPointPrompt:
-        MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
+noBookmark:
+        If Not selectedRange Is Nothing Then
+            If Not Application.IsObjectValid(selectedRange) Or selectedRange.Start = selectedRange.End Then
+                Set selectedRange = Nothing
+                GoTo noRange
+            End If
+            Dim oldbm As Bookmark
+            Dim bmi As Bookmark
+            Dim bmShowHiddenOld As Boolean
+            bmShowHiddenOld = selectedRange.Bookmarks.ShowHidden
+            
+            'search for existing bookmark reference the same range
+            selectedRange.Bookmarks.ShowHidden = True
+            For Each bmi In selectedRange.Bookmarks
+                If bmi.Range.IsEqual(selectedRange) And bmi.Name Like BookmarkPrefix & "#*" Then
+                    Set oldbm = bmi
+                    Exit For
+                End If
+            Next bmi
+            selectedRange.Bookmarks.ShowHidden = bmShowHiddenOld
+            
+            If Not oldbm Is Nothing Then
+                Set selectedBM = oldbm
+            Else
+                'create new bookmark using timestamp as its name
+                Set selectedBM = selectedRange.Bookmarks.Add(BookmarkPrefix & GetTimeStamp(), selectedRange)
+            End If
+            GoTo insertRef
+            
+        Else
+noRange:
+            MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
+        End If
+
     End If
     
 exitSub:
