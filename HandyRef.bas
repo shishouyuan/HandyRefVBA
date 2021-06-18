@@ -12,14 +12,14 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210617.2006.VBA"
+Const HandyRefVersion = "20210618.1050.VBA"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
 Const BookmarkPrefix = "_HandyRef"
 Const RefBrokenCommentTitle = "$HANDYREF_REFERENCE_BROKEN_COMMENT$"
 
-#Const HandyRef_Lang = "en-us"
+#Const HandyRef_Lang = "zh-cn"
 
 Const BrokenRefNumPosHolder = "#"
 
@@ -266,8 +266,15 @@ Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
 End Sub
 
 Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
-    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_CheckReference)
+    
+    Dim oldScreenUpdating As Boolean
+    oldScreenUpdating = Application.ScreenUpdating
+    
     On Error GoTo errHandle
+    
+    Application.ScreenUpdating = False
+    
+    Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_CheckReference)
     
     HandyRef_ClearRefBrokenComment checkingRange
     
@@ -323,6 +330,7 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     End If
     
 exitSub:
+    Application.ScreenUpdating = oldScreenUpdating
     Application.UndoRecord.EndCustomRecord
     Exit Sub
     

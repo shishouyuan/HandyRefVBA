@@ -42,7 +42,7 @@ var TEXT_ActionName_ClearRefBrokenComment
 
 function HandyRef_OnLoad(ribbonUI) {
 
-    HandyRefVersion = "20210616.2006.JS"
+    HandyRefVersion = "20210618.1050.JS"
 
     TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -126,7 +126,7 @@ function HandyRef_CreateReferencePoint_RibbonFun(control) { // wrap the function
 
 function HandyRef_CreateReferencePoint() {
     var rg = Application.Selection.Range
-    if(selectedRange && Application.IsObjectValid(selectedRange) && rg.IsEqual(selectedRange)){
+    if (selectedRange && Application.IsObjectValid(selectedRange) && rg.IsEqual(selectedRange)) {
         return
     }
     else {
@@ -268,7 +268,9 @@ function HandyRef_CheckForBrokenRef_RibbonFun(control) {
 }
 
 function HandyRef_CheckForBrokenRef(checkingRange) {
+    var oldScreenUpdating = Application.ScreenUpdating
     try {
+        Application.ScreenUpdating = false
         Application.UndoRecord.StartCustomRecord(HandyRef_FormatUndoRecordText(TEXT_ActionName_CheckReference))
         HandyRef_ClearRefBrokenComment(checkingRange)
 
@@ -317,6 +319,7 @@ function HandyRef_CheckForBrokenRef(checkingRange) {
         HandyRef_ShowUnknowErrorPrompt(err.message)
     }
     finally {
+        Application.ScreenUpdating = oldScreenUpdating
         Application.UndoRecord.EndCustomRecord()
     }
 
