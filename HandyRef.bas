@@ -12,7 +12,7 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210618.1050.VBA"
+Const HandyRefVersion = "20210620.1556.VBA"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -72,6 +72,9 @@ Const BrokenRefNumPosHolder = "#"
 
 Private selectedRange As Range
 Private selectedBM As Bookmark
+Private selectedIsNote As Boolean
+Private selectedHeading As Boolean
+
 
 Private ribbonUI As IRibbonUI
 Private helper As helper
@@ -112,13 +115,41 @@ Public Sub HandyRef_CreateReferencePoint()
     Dim rg As Range
     Set rg = Application.Selection.Range
    
-    If rg.End = rg.Start Then
+    selectedIsNote = False
+    Set selectedRange = rg
+    Set selectedBM = Nothing
+    
+    On Error Resume Next    'will cause error when accessing endnotes property when the range is in footnote section
+    If rg.Endnotes.Count = 0 Then
+    On Error GoTo exitSub
+        If rg.Footnotes.Count = 1 Then
+            Dim fn As Footnote
+            Set fn = rg.Footnotes.Item(1)
+            If rg.InRange(fn.Range) Or rg.InRange(fn.Reference) Or Not fn.Reference.InRange(rg) Then
+                selectedIsNote = True
+                Set selectedRange = fn.Reference
+            End If
+        End If
+    End If
+    
+    On Error Resume Next
+    If rg.Footnotes.Count = 0 Then
+    On Error GoTo exitSub
+        If rg.Endnotes.Count = 1 Then
+        Dim en As Endnote
+            Set en = rg.Endnotes.Item(1)
+            If rg.InRange(en.Range) Or rg.InRange(en.Reference) Or Not en.Reference.InRange(rg) Then
+                selectedIsNote = True
+                Set selectedRange = en.Reference
+            End If
+        End If
+    End If
+
+exitSub:
+    If rg.End = rg.Start And Not selectedIsNote Then
         Set selectedRange = Nothing
         Set selectedBM = Nothing
         MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly + vbInformation, TEXT_HandyRefAppName
-    Else
-        Set selectedRange = rg
-        Set selectedBM = Nothing
     End If
     
 End Sub
@@ -197,7 +228,11 @@ emptyRange:
     End If
     
     If bmValid Then
-        ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
+        If selectedIsNote Then
+            ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldNoteRef, selectedBM.Name & " \h"
+        Else
+            ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
+        End If
     End If
     
 exitSub:
@@ -212,7 +247,7 @@ End Sub
 
 Public Sub HandyRef_ClearRefBrokenComment_RibbonFun(ByVal control As IRibbonControl)
     
-    If Application.Selection.End - Application.Selection.Start = 0 Then
+    If Application.Selection.End = Application.Selection.Start Then
         If MsgBox(TEXT_ClearRefBrokenCommentForWholeDocPrompt, vbOKCancel + vbQuestion, TEXT_HandyRefAppName) = vbOK Then
             HandyRef_ClearRefBrokenComment ActiveDocument.Range
         Else
@@ -265,6 +300,8 @@ Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
     
 End Sub
 
+
+
 Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     
     Dim oldScreenUpdating As Boolean
@@ -279,13 +316,23 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     HandyRef_ClearRefBrokenComment checkingRange
     
     Static refRegExp As Object
+    Static refRegExp0 As Object
     If refRegExp Is Nothing Then
         Set refRegExp = CreateObject("VBScript.RegExp")
         With refRegExp
             .Global = False
             .IgnoreCase = True
-            .Pattern = "\s*REF\s+([^\s]+)\s*.*"
+            .Pattern = "^\s*(?:NOTE)?REF.*\s([^\s\\]+).*"
+            '.Pattern = "^\s*(?:NOTE)?REF.*?(?<!\\\*)\s+([^\s\\]+).*"
         End With
+        
+        Set refRegExp0 = CreateObject("VBScript.RegExp")
+        With refRegExp0
+            .Global = True
+            .IgnoreCase = True
+            .Pattern = "\\[*@#]\s*[^\s\\]*"
+        End With
+        
     End If
     
     Dim brokenCount As Integer
@@ -293,29 +340,32 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     
     Dim fd As Field
     Dim bmName As String
-    Dim cmt As Comment
+    
     For Each fd In checkingRange.Fields
-        If fd.Type = wdFieldRef Then
-            Set r = refRegExp.Execute(fd.Code.Text)
+        If fd.Type = wdFieldRef Or fd.Type = wdFieldNoteRef Then
+            Set r = refRegExp.Execute(refRegExp0.Replace(fd.code.Text, ""))
+            Dim isBroken As Boolean
+            isBroken = True
             If r.Count > 0 Then
                 bmName = r.Item(0).SubMatches(0)
-                If Not ActiveDocument.Bookmarks.Exists(bmName) Then
-                
-                    brokenCount = brokenCount + 1
-                    
-                    Set cmt = fd.Code.Comments.Add(fd.Code)
-                    With cmt.Range
-                        .InsertAfter TEXT_RefBrokenComment
-                        .InsertParagraphAfter
-                        .InsertAfter RefBrokenCommentTitle
-                    End With
-                    
-                    With cmt.Range.Paragraphs.First.Range
-                        .Bold = True
-                        .HighlightColorIndex = wdYellow
-                    End With
-                   
+                If ActiveDocument.Bookmarks.Exists(bmName) Then
+                    isBroken = False
                 End If
+            End If
+            If isBroken Then
+                brokenCount = brokenCount + 1
+                Dim cmt As Comment
+                Set cmt = fd.code.Comments.Add(fd.code)
+                With cmt.Range
+                    .InsertAfter TEXT_RefBrokenComment
+                    .InsertParagraphAfter
+                    .InsertAfter RefBrokenCommentTitle
+                End With
+                
+                With cmt.Range.Paragraphs.First.Range
+                    .Bold = True
+                    .HighlightColorIndex = wdYellow
+                End With
             End If
         End If
     Next fd

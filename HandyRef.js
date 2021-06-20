@@ -42,7 +42,7 @@ var TEXT_ActionName_ClearRefBrokenComment
 
 function HandyRef_OnLoad(ribbonUI) {
 
-    HandyRefVersion = "20210618.1050.JS"
+    HandyRefVersion = "20210620.1556.JS"
 
     TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
 
@@ -110,6 +110,7 @@ function HandyRef_GetEnabled(control) {
 
 var selectedBM
 var selectedRange
+var selectedIsNote
 
 
 function HandyRef_FormatUndoRecordText(s) {
@@ -126,19 +127,30 @@ function HandyRef_CreateReferencePoint_RibbonFun(control) { // wrap the function
 
 function HandyRef_CreateReferencePoint() {
     var rg = Application.Selection.Range
-    if (selectedRange && Application.IsObjectValid(selectedRange) && rg.IsEqual(selectedRange)) {
-        return
-    }
-    else {
-        selectedBM = null
-        if (rg.End == rg.Start) {
-            selectedRange = null
-            alert(TEXT_CreateReferencePoint_nullSelected)
-        }
-        else {
-            selectedRange = rg
+
+    selectedIsNote = false
+    selectedRange = rg
+    selectedBM = null
+    if (rg.Endnotes.Count == 0 && rg.Footnotes.Count == 1) {
+        var fn = rg.Footnotes.Item(1)
+        if (rg.InRange(fn.Range) || rg.InRange(fn.Reference) || !fn.Reference.InRange(rg)) {
+            selectedIsNote = true
+            selectedRange = fn.Reference
         }
     }
+    else if (rg.Footnotes.Count == 0 && rg.Endnotes.Count == 1) {
+        var en = rg.Endnotes.Item(1)
+        if (rg.InRange(en.Range) || rg.InRange(en.Reference) || !en.Reference.InRange(rg)) {
+            selectedIsNote = true
+            selectedRange = en.Reference
+        }
+    }
+
+    if (rg.End == rg.Start && !selectedIsNote) {
+        selectedRange = null
+        alert(TEXT_CreateReferencePoint_nullSelected)
+    }
+
 }
 
 
@@ -205,7 +217,12 @@ function HandyRef_InsertCrossReferenceField() {
             }
         }
         if (bmValid) {
-            ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h")
+            if (selectedIsNote) {
+                ActiveDocument.Fields.Add(Selection.Range, wdFieldNoteRef, selectedBM.Name + " \\h")
+            }
+            else {
+                ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h")
+            }
         }
     }
     catch (err) {
@@ -274,31 +291,36 @@ function HandyRef_CheckForBrokenRef(checkingRange) {
         Application.UndoRecord.StartCustomRecord(HandyRef_FormatUndoRecordText(TEXT_ActionName_CheckReference))
         HandyRef_ClearRefBrokenComment(checkingRange)
 
-        var refRegExp = /\s*REF\s+([^\s]+)\s*.*/i
+        //var refRegExp = /^\s*(?:NOTE)?REF.*?(?<!\\\*)\s+([^\s\\]+).*/i
+        var refRegExp = /^\s*(NOTE){0,1}REF.*\s([^\s\\]+).*/i
+        var refRegExp0 = /\\[*@#]\s*[^\s\\]*/g
+
         var brokenCount = 0
 
         for (var i = 1; i <= checkingRange.Fields.Count; i++) {
             var fd = checkingRange.Fields.Item(i)
 
-            if (fd.Type == wdFieldRef) {
-                r = refRegExp.exec(fd.Code.Text)
-
+            if (fd.Type == wdFieldRef || fd.Type == wdFieldNoteRef) {
+                r = refRegExp.exec(fd.Code.Text.replace(refRegExp0, ""))
+                var isBroken = true
                 if (r.length > 0) {
-                    var bmName = r[1]
-                    if (!ActiveDocument.Bookmarks.Exists(bmName)) {
-
-                        brokenCount = brokenCount + 1
-
-                        var cmt = fd.Code.Comments.Add(fd.Code)
-                        var t = cmt.Range
-                        t.InsertAfter(TEXT_RefBrokenComment)
-                        t.InsertParagraphAfter()
-                        t.InsertAfter(RefBrokenCommentTitle)
-
-                        t = cmt.Range.Paragraphs.First.Range
-                        t.Bold = true
-                        t.HighlightColorIndex = wdYellow
+                    var bmName = r[2]
+                    if (ActiveDocument.Bookmarks.Exists(bmName)) {
+                        isBroken = false
                     }
+                }
+                if (isBroken) {
+                    brokenCount = brokenCount + 1
+
+                    var cmt = fd.Code.Comments.Add(fd.Code)
+                    var t = cmt.Range
+                    t.InsertAfter(TEXT_RefBrokenComment)
+                    t.InsertParagraphAfter()
+                    t.InsertAfter(RefBrokenCommentTitle)
+
+                    t = cmt.Range.Paragraphs.First.Range
+                    t.Bold = true
+                    t.HighlightColorIndex = wdYellow
                 }
             }
         }
