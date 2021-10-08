@@ -61,7 +61,7 @@
 ### 检查引用错误
 &ensp;&ensp;&ensp;&ensp;“HandyRef-快引”可以查找文档中损坏的交叉引用并添加提示批注，方便用户发现文档中存在的交叉引用问题。只需点击`检查引用`按钮即可。
 ## “HandyRef-快引”的安装
-&ensp;&ensp;&ensp;&ensp;首先请从https://github.com/shishouyuan/HandyRefVBA 的`Release`文件夹中获取最新的模板文件, 想使用中文界面请下载`HandyRef-中文.dotm`。有2种安装方式。
+&ensp;&ensp;&ensp;&ensp;首先请从https://github.com/shishouyuan/HandyRefVBA 的`Release`文件夹中获取最新的模板文件, 想使用中文界面请下载`HandyRef-中文.dotm`。有2种安装方式。（对于*WPS 2019*请先打开`开发工具`->`WPS 宏编辑器`->`工具`->`选项`，**取消勾选**`禁止全局作用域表达式`）
 ### 全局安装“HandyRef-快引”
 &ensp;&ensp;&ensp;&ensp;如果希望在编辑任何Word文件时都可以使用“HandyRef-快引”, 请选择全局安装。
 &ensp;&ensp;&ensp;&ensp;安装方法仅需1步。将`HandyRef-中文.dotm`模板文件放入电脑中的`%AppData%\Microsoft\Word\STARTUP`文件夹, 重新打开Word根据提示启用宏即可。
