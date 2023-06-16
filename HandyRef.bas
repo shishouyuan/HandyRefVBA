@@ -12,9 +12,10 @@
 '创建时期: 2021/5/11
 
 
-Const HandyRefVersion = "20210620.1556.VBA"
+Const HandyRefVersion = "20230616.1914.VBA"
 
 Const TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
+Const TEXT_HandyRefZhihuUrl = "https://zhuanlan.zhihu.com/p/373677845"
 
 Const BookmarkPrefix = "_HandyRef"
 Const RefBrokenCommentTitle = "$HANDYREF_REFERENCE_BROKEN_COMMENT$"
@@ -70,10 +71,18 @@ Const BrokenRefNumPosHolder = "#"
     
 #End If
 
+Public Enum RefTypes
+    Normal = 0
+    ParaNumber = 1
+    PageNumber = 2
+    RelativePosition = 3
+End Enum
+
 Private selectedRange As Range
 Private selectedBM As Bookmark
 Private selectedIsNote As Boolean
 Private selectedHeading As Boolean
+Private editEnabled As Boolean
 
 
 Private ribbonUI As IRibbonUI
@@ -90,11 +99,13 @@ End Sub
 
 Public Sub HandyRef_GetEnabled(ByVal control As IRibbonControl, ByRef enabled)
     On Error GoTo noDoc
-    enabled = Not Application.ActiveWindow.Document Is Nothing
+    editEnabled = Not Application.ActiveWindow.Document Is Nothing
+    enabled = editEnabled
     Exit Sub
     
 noDoc:
-    enabled = False
+    editEnabled = False
+    enabled = editEnabled
 End Sub
 
 
@@ -152,12 +163,35 @@ exitSub:
         MsgBox TEXT_CreateReferencePoint_NothingSelected, vbOKOnly + vbInformation, TEXT_HandyRefAppName
     End If
     
+    HandyRef_UpdateRibbonState
+    
+End Sub
+
+Public Sub HandyRef_InsertCrossReferenceField_SplitButton_GetEnabled(ByVal control As IRibbonControl, ByRef enabled)
+    enabled = editEnabled And Not selectedRange Is Nothing
+End Sub
+
+Public Sub HandyRef_InsertCrossReferenceField_Menu_GetVisible(ByVal control As IRibbonControl, ByRef enabled)
+    enabled = editEnabled And Not selectedRange Is Nothing And Not selectedIsNote
+End Sub
+
+Public Sub HandyRef_InsertCrossReferenceField_Normal_RibbonFun(ByVal control As IRibbonControl)
+    HandyRef_InsertCrossReferenceField_With_Type RefTypes.Normal
+End Sub
+
+Public Sub HandyRef_InsertCrossReferenceField_ParaNumber_RibbonFun(ByVal control As IRibbonControl)
+    HandyRef_InsertCrossReferenceField_With_Type RefTypes.ParaNumber
+End Sub
+
+Public Sub HandyRef_InsertCrossReferenceField_PageNumber_RibbonFun(ByVal control As IRibbonControl)
+    HandyRef_InsertCrossReferenceField_With_Type RefTypes.PageNumber
+End Sub
+
+Public Sub HandyRef_InsertCrossReferenceField_RelativePosition_RibbonFun(ByVal control As IRibbonControl)
+    HandyRef_InsertCrossReferenceField_With_Type RefTypes.RelativePosition
 End Sub
 
 
-Public Sub HandyRef_InsertCrossReferenceField_RibbonFun(ByVal control As IRibbonControl)
-    HandyRef_InsertCrossReferenceField
-End Sub
 
 Private Function GetTimeStamp() As String
     'Date variables are stored as IEEE 64-bit (8-byte) floating-point numbers
@@ -167,19 +201,39 @@ Private Function GetTimeStamp() As String
     GetTimeStamp = Replace(CStr(CDbl(Now)), ".", "")
 End Function
 
-
 Public Sub HandyRef_InsertCrossReferenceField()
+    HandyRef_InsertCrossReferenceField_With_Type RefTypes.Normal
+End Sub
+
+
+Private Sub HandyRef_InsertCrossReferenceField_With_Type(refType As RefTypes)
+
     On Error GoTo errHandle
-    
     Application.UndoRecord.StartCustomRecord FormatUndoRecordText(TEXT_ActionName_InsertReference)
+    
+    Dim setToFirstPara As Boolean
+    If refType = RefTypes.ParaNumber Then
+        setToFirstPara = True
+    Else
+        setToFirstPara = False
+    End If
     
     Dim bmValid As Boolean
     bmValid = False
+    Dim targetRange As Range
     
+    If setToFirstPara Then
+        Set targetRange = selectedRange.Paragraphs.First.Range
+    Else
+        Set targetRange = selectedRange
+    End If
+
     If Not selectedBM Is Nothing Then
         If Application.IsObjectValid(selectedBM) Then
             If selectedBM.Parent Is ActiveDocument Then
-                bmValid = True
+                If selectedBM.Range.IsEqual(targetRange) Then
+                    bmValid = True
+                End If
             Else
 crossFile:
                 MsgBox TEXT_InsertCrossReferenceField_CannotCrossFile, vbOKOnly + vbInformation, TEXT_HandyRefAppName
@@ -190,36 +244,36 @@ crossFile:
         End If
     End If
     If Not bmValid Then
-        If selectedRange Is Nothing Then
+        If targetRange Is Nothing Then
             GoTo emptyRange
-        ElseIf Not Application.IsObjectValid(selectedRange) Or selectedRange.Start = selectedRange.End Then
+        ElseIf Not Application.IsObjectValid(targetRange) Or targetRange.Start = targetRange.End Then
 emptyRange:
             Set selectedRange = Nothing
             MsgBox TEXT_InsertCrossReferenceField_NoRefPoint, vbOKOnly + vbInformation, TEXT_HandyRefAppName
             GoTo exitSub
-        ElseIf Not selectedRange.Document Is ActiveDocument Then
+        ElseIf Not targetRange.Document Is ActiveDocument Then
             GoTo crossFile
         Else
             Dim oldbm As Bookmark
             Dim bmi As Bookmark
             Dim bmShowHiddenOld As Boolean
-            bmShowHiddenOld = selectedRange.Bookmarks.ShowHidden
+            bmShowHiddenOld = targetRange.Bookmarks.ShowHidden
             
             'search for existing bookmark reference the same range
-            selectedRange.Bookmarks.ShowHidden = True
-            For Each bmi In selectedRange.Bookmarks
-                If bmi.Range.IsEqual(selectedRange) And bmi.Name Like BookmarkPrefix & "#*" Then
+            targetRange.Bookmarks.ShowHidden = True
+            For Each bmi In targetRange.Bookmarks
+                If bmi.Range.IsEqual(targetRange) And bmi.Name Like BookmarkPrefix & "#*" Then
                     Set oldbm = bmi
                     Exit For
                 End If
             Next bmi
-            selectedRange.Bookmarks.ShowHidden = bmShowHiddenOld
+            targetRange.Bookmarks.ShowHidden = bmShowHiddenOld
             
             If Not oldbm Is Nothing Then
                 Set selectedBM = oldbm
             Else
                 'create new bookmark using timestamp as its name
-                Set selectedBM = selectedRange.Bookmarks.Add(BookmarkPrefix & GetTimeStamp(), selectedRange)
+                Set selectedBM = targetRange.Bookmarks.Add(BookmarkPrefix & GetTimeStamp(), targetRange)
             End If
             
             bmValid = True
@@ -229,18 +283,32 @@ emptyRange:
     
     If bmValid Then
         If selectedIsNote Then
-            ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldNoteRef, selectedBM.Name & " \h"
+            If refType <> RefTypes.Normal Then
+                MsgBox "Action not supported for footnote or endnote."
+                GoTo exitSub
+            End If
+            ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldNoteRef, selectedBM.Name & " \h "
         Else
-            ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
+            Select Case refType
+            Case RefTypes.Normal
+                ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h"
+            Case RefTypes.ParaNumber
+                ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h \w"
+            Case RefTypes.PageNumber
+                ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldPageRef, selectedBM.Name & " \h"
+            Case RefTypes.RelativePosition
+                ActiveDocument.Fields.Add Selection.Range, WdFieldType.wdFieldRef, selectedBM.Name & " \h \p"
+            End Select
         End If
     End If
     
 exitSub:
     Application.UndoRecord.EndCustomRecord
+    HandyRef_UpdateRibbonState
     Exit Sub
     
 errHandle:
-    ShowUnknowErrorPrompt err
+    ShowUnknowErrorPrompt Err
     GoTo exitSub
     
 End Sub
@@ -284,7 +352,7 @@ exitSub:
     Exit Sub
     
 errHandle:
-    ShowUnknowErrorPrompt err
+    ShowUnknowErrorPrompt Err
     GoTo exitSub
     
 End Sub
@@ -299,8 +367,6 @@ Public Sub HandyRef_CheckForBrokenRef_RibbonFun(ByVal control As IRibbonControl)
     End If
     
 End Sub
-
-
 
 Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     
@@ -322,7 +388,7 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
         With refRegExp
             .Global = False
             .IgnoreCase = True
-            .Pattern = "^\s*(?:NOTE)?REF.*\s([^\s\\]+).*"
+            .Pattern = "^\s*(?:NOTE|PAGE)?REF.*\s([^\s\\]+).*"
             '.Pattern = "^\s*(?:NOTE)?REF.*?(?<!\\\*)\s+([^\s\\]+).*"
         End With
         
@@ -342,7 +408,7 @@ Public Sub HandyRef_CheckForBrokenRef(checkingRange As Range)
     Dim bmName As String
     
     For Each fd In checkingRange.Fields
-        If fd.Type = wdFieldRef Or fd.Type = wdFieldNoteRef Then
+        If fd.Type = wdFieldRef Or fd.Type = wdFieldNoteRef Or fd.Type = wdFieldPageRef Then
             Set r = refRegExp.Execute(refRegExp0.Replace(fd.code.Text, ""))
             Dim isBroken As Boolean
             isBroken = True
@@ -385,7 +451,7 @@ exitSub:
     Exit Sub
     
 errHandle:
-    ShowUnknowErrorPrompt err
+    ShowUnknowErrorPrompt Err
     GoTo exitSub
     
 End Sub
@@ -406,7 +472,7 @@ Public Sub HandyRef_About()
     vbOKOnly + vbInformation, TEXT_HandyRefAppName
 End Sub
 
-Public Sub HandyRef_GetLatestVersion_RibbonFun(ByVal control As IRibbonControl)
+Public Sub HandyRef_GetLatestVersion_Github_RibbonFun(ByVal control As IRibbonControl)
     On Error GoTo errHandle
        
     Shell "explorer.exe " & TEXT_HandyRefGithubUrl
@@ -414,6 +480,19 @@ Public Sub HandyRef_GetLatestVersion_RibbonFun(ByVal control As IRibbonControl)
     Exit Sub
     
 errHandle:
-    ShowUnknowErrorPrompt err
+    ShowUnknowErrorPrompt Err
+    
+End Sub
+
+
+Public Sub HandyRef_GetLatestVersion_Zhihu_RibbonFun(ByVal control As IRibbonControl)
+    On Error GoTo errHandle
+       
+    Shell "explorer.exe " & TEXT_HandyRefZhihuUrl
+    
+    Exit Sub
+    
+errHandle:
+    ShowUnknowErrorPrompt Err
     
 End Sub

@@ -11,10 +11,12 @@
 //E-mail: shishouyuan@outlook.com
 //创建时期: 2021/5/11
 
+var ribbonUI // onLoad does not pass this correctly
 
 var HandyRefVersion
 
 var TEXT_HandyRefGithubUrl
+var TEXT_HandyRefZhihuUrl
 var BookmarkPrefix
 var RefBrokenCommentTitle
 var HandyRef_Lang
@@ -39,12 +41,18 @@ var TEXT_ActionName_CreateSource
 var TEXT_ActionName_InsertReference
 var TEXT_ActionName_CheckReference
 var TEXT_ActionName_ClearRefBrokenComment
+var RefTypes_Normal = 0
+var RefTypes_ParaNumber = 1
+var RefTypes_PageNumber = 2
+var RefTypes_RelativePosition = 3
 
-function HandyRef_OnLoad(ribbonUI) {
+function HandyRef_OnLoad(_ribbonUI) {
 
-    HandyRefVersion = "20210620.1556.JS"
+    HandyRefVersion = "20230616.2040.JS"
+    ribbonUI = _ribbonUI
 
     TEXT_HandyRefGithubUrl = "https://github.com/shishouyuan/HandyRefVBA"
+    TEXT_HandyRefZhihuUrl = "https://zhuanlan.zhihu.com/p/373677845"
 
     BookmarkPrefix = "_HandyRef"
     RefBrokenCommentTitle = "$HANDYREF_REFERENCE_BROKEN_COMMENT$"
@@ -102,6 +110,12 @@ function HandyRef_OnLoad(ribbonUI) {
 }
 
 
+function HandyRef_UpdateRibbonState() {
+    //ribbonUI.Invalidate()
+    // parameter passed to onLoad is not ribbonUI
+    return
+}
+
 function HandyRef_GetEnabled(control) {
     return true
     //return ActiveDocument!=null
@@ -151,24 +165,59 @@ function HandyRef_CreateReferencePoint() {
         alert(TEXT_CreateReferencePoint_nullSelected)
     }
 
+    HandyRef_UpdateRibbonState()
 }
 
+function HandyRef_InsertCrossReferenceField_SplitButton_GetEnabled(control) {
+    //return selectedRange != null
+    return true
+}
+
+function HandyRef_InsertCrossReferenceField_Menu_GetVisible(control) {
+    //return selectedRange != null && !selectedIsNote
+    return true
+}
+
+function HandyRef_InsertCrossReferenceField_Normal_RibbonFun(control) {
+    HandyRef_InsertCrossReferenceField_With_Type(RefTypes_Normal)
+}
+
+function HandyRef_InsertCrossReferenceField_ParaNumber_RibbonFun(control) {
+    HandyRef_InsertCrossReferenceField_With_Type(RefTypes_ParaNumber)
+}
+
+function HandyRef_InsertCrossReferenceField_PageNumber_RibbonFun(control) {
+    HandyRef_InsertCrossReferenceField_With_Type(RefTypes_PageNumber)
+}
+
+function HandyRef_InsertCrossReferenceField_RelativePosition_RibbonFun(control) {
+    HandyRef_InsertCrossReferenceField_With_Type(RefTypes_RelativePosition)
+}
 
 function HandyRef_InsertCrossReferenceField_RibbonFun(control) {
     HandyRef_InsertCrossReferenceField()
 }
 
-
-
 function HandyRef_InsertCrossReferenceField() {
+    HandyRef_InsertCrossReferenceField_With_Type(RefTypes_Normal)
+}
+
+function HandyRef_InsertCrossReferenceField_With_Type(refType) {
     try {
         Application.UndoRecord.StartCustomRecord(HandyRef_FormatUndoRecordText(TEXT_ActionName_InsertReference))
-
+        var setToFirstPara = refType == RefTypes_ParaNumber
+        var targetRange
+        if (setToFirstPara) {
+            targetRange = selectedRange.Paragraphs.First.Range
+        }
+        else {
+            targetRange = selectedRange
+        }
         var bmValid = false
         if (selectedBM) {
             if (Application.IsObjectValid(selectedBM)) {
                 if (selectedBM.Parent == ActiveDocument) {
-                    bmValid = true
+                    bmValid = selectedBM.Range.IsEqual(targetRange)
                 }
                 else {
                     alert(TEXT_InsertCrossReferenceField_CannotCrossFile)
@@ -180,37 +229,37 @@ function HandyRef_InsertCrossReferenceField() {
             }
         }
         if (!bmValid) {
-            if (!selectedRange || !Application.IsObjectValid(selectedRange) || selectedRange.Start == selectedRange.End) {
+            if (!targetRange || !Application.IsObjectValid(targetRange) || targetRange.Start == targetRange.End) {
                 selectedRange = null
                 alert(TEXT_InsertCrossReferenceField_NoRefPoint)
                 return
             }
-            else if (selectedRange.Document != ActiveDocument) {
+            else if (targetRange.Document != ActiveDocument) {
                 alert(TEXT_InsertCrossReferenceField_CannotCrossFile)
                 return
             }
             else {
                 var oldbm// As Bookmark
-                var bmShowHiddenOld = selectedRange.Bookmarks.ShowHidden
+                var bmShowHiddenOld = targetRange.Bookmarks.ShowHidden
 
                 //search for existing bookmark reference the same range
                 var bmRegExp = new RegExp(BookmarkPrefix + "\\d+")
-                selectedRange.Bookmarks.ShowHidden = true
-                for (var i = 1; i <= selectedRange.Bookmarks.Count; i++) {
-                    var bmi = selectedRange.Bookmarks.Item(i)
-                    if (bmi.Range.IsEqual(selectedRange) && bmRegExp.test(bmi.Name)) {
+                targetRange.Bookmarks.ShowHidden = true
+                for (var i = 1; i <= targetRange.Bookmarks.Count; i++) {
+                    var bmi = targetRange.Bookmarks.Item(i)
+                    if (bmi.Range.IsEqual(targetRange) && bmRegExp.test(bmi.Name)) {
                         oldbm = bmi
                         break
                     }
                 }
-                selectedRange.Bookmarks.ShowHidden = bmShowHiddenOld
+                targetRange.Bookmarks.ShowHidden = bmShowHiddenOld
 
                 if (oldbm) {
                     selectedBM = oldbm
                 }
                 else {
                     //create new bookmark using timestamp as its name
-                    selectedBM = selectedRange.Bookmarks.Add(BookmarkPrefix + new Date().getTime(), selectedRange)
+                    selectedBM = targetRange.Bookmarks.Add(BookmarkPrefix + new Date().getTime(), targetRange)
                 }
                 bmValid = true
 
@@ -218,10 +267,29 @@ function HandyRef_InsertCrossReferenceField() {
         }
         if (bmValid) {
             if (selectedIsNote) {
-                ActiveDocument.Fields.Add(Selection.Range, wdFieldNoteRef, selectedBM.Name + " \\h")
+                if (refType != RefTypes_Normal) {
+                    alert("Action not supported for footnote or endnote.")
+                }
+                else {
+                    ActiveDocument.Fields.Add(Selection.Range, wdFieldNoteRef, selectedBM.Name + " \\h")
+                }
             }
             else {
-                ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h")
+                switch (refType) {
+                    case RefTypes_Normal:
+                        ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h")
+                        break
+                    case RefTypes_ParaNumber:
+                        ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h \\w")
+                        break
+                    case RefTypes_PageNumber:
+                        ActiveDocument.Fields.Add(Selection.Range, wdFieldPageRef, selectedBM.Name + " \\h")
+                        break
+                    case RefTypes_RelativePosition:
+                        ActiveDocument.Fields.Add(Selection.Range, wdFieldRef, selectedBM.Name + " \\h \\p")
+                        break
+                }
+
             }
         }
     }
@@ -230,6 +298,7 @@ function HandyRef_InsertCrossReferenceField() {
     }
     finally {
         Application.UndoRecord.EndCustomRecord()
+        HandyRef_UpdateRibbonState()
     }
 
 }
@@ -292,7 +361,7 @@ function HandyRef_CheckForBrokenRef(checkingRange) {
         HandyRef_ClearRefBrokenComment(checkingRange)
 
         //var refRegExp = /^\s*(?:NOTE)?REF.*?(?<!\\\*)\s+([^\s\\]+).*/i
-        var refRegExp = /^\s*(NOTE){0,1}REF.*\s([^\s\\]+).*/i
+        var refRegExp = /^\s*(NOTE|PAGE){0,1}REF.*\s([^\s\\]+).*/i
         var refRegExp0 = /\\[*@#]\s*[^\s\\]*/g
 
         var brokenCount = 0
@@ -300,7 +369,7 @@ function HandyRef_CheckForBrokenRef(checkingRange) {
         for (var i = 1; i <= checkingRange.Fields.Count; i++) {
             var fd = checkingRange.Fields.Item(i)
 
-            if (fd.Type == wdFieldRef || fd.Type == wdFieldNoteRef) {
+            if (fd.Type == wdFieldRef || fd.Type == wdFieldNoteRef || fd.Type == wdFieldPageRef) {
                 r = refRegExp.exec(fd.Code.Text.replace(refRegExp0, ""))
                 var isBroken = true
                 if (r.length > 0) {
@@ -355,7 +424,7 @@ function HandyRef_About() {
     alert(TEXT_HandyRefAppName + '\r\n' + TEXT_HandyRefDescription + '\r\n' + TEXT_NonCommecialPrompt + '\r\n\r\n' + TEXT_VersionPrompt + HandyRefVersion + '\r\n' + TEXT_HandyRefAuthor + '\r\n' + TEXT_HandyRefGithubUrl)//)
 }
 
-function HandyRef_GetLatestVersion_RibbonFun(control) {
+function HandyRef_GetLatestVersion_Github_RibbonFun(control) {
     try {
         Shell("explorer.exe " + TEXT_HandyRefGithubUrl, jsNormalFocus)
     }
@@ -364,3 +433,11 @@ function HandyRef_GetLatestVersion_RibbonFun(control) {
     }
 }
 
+function HandyRef_GetLatestVersion_Zhihu_RibbonFun(control) {
+    try {
+        Shell("explorer.exe " + TEXT_HandyRefZhihuUrl, jsNormalFocus)
+    }
+    catch (err) {
+        HandyRef_ShowUnknowErrorPrompt(err)
+    }
+}

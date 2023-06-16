@@ -3,13 +3,49 @@
     <tabs>
       <tab idMso="TabReferences">
         <group id="HandyRefGroup" label="HandyRef-快引" imageMso="CrossReferenceInsert">
-          <button id="HandyRef_CreateReferencePoint_Button" label="创建引用源" screentip="创建引用源 (Ctrl+Alt+C)" size="large" imageMso="TableOfContentsAddTextGallery" onAction="HandyRef_CreateReferencePoint_RibbonFun" getEnabled="HandyRef_GetEnabled" />
-          <button id="HandyRef_InsertCrossReferenceField_Button" label="交叉引用" screentip="插入交叉引用 (Ctrl+Alt+V)" size="large" imageMso="CrossReferenceInsert" onAction="HandyRef_InsertCrossReferenceField_RibbonFun" getEnabled="HandyRef_GetEnabled" />
-          <button id="HandyRef_CheckForBrokenRef_Button" label="检查引用" screentip="查找文档中是否存在损坏的引用，若找到将为其添加批注" size="large" imageMso="ErrorChecking" onAction="HandyRef_CheckForBrokenRef_RibbonFun" getEnabled="HandyRef_GetEnabled" />
-          <button id="HandyRef_ClearRefBrokenComment_Button" label="清除批注" screentip="清除所有针对损坏引用的批注" size="normal" imageMso="Clear" onAction="HandyRef_ClearRefBrokenComment_RibbonFun" getEnabled="HandyRef_GetEnabled"/>
-          <button id="HandyRef_GetLatestVersion_Button" label="获取更新" screentip="打开网页获取最新版本" size="normal" imageMso="Refresh" onAction="HandyRef_GetLatestVersion_RibbonFun" />
-          <button id="HandyRef_About_Button" label="关于“快引”" size="normal" imageMso="Info" onAction="HandyRef_About_RibbonFun" />
-        </group >
+          <button id="HandyRef_CreateReferencePoint_Button" label="创建引用源"
+            screentip="创建引用源 (Ctrl+Alt+C)" size="large" imageMso="TableOfContentsAddTextGallery"
+            onAction="HandyRef_CreateReferencePoint_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <splitButton id="HandyRef_InsertCrossReferenceField_SplitButton" size="large"
+            getEnabled="HandyRef_InsertCrossReferenceField_SplitButton_GetEnabled">
+            <button id="HandyRef_InsertCrossReferenceField_Button" label="引用"
+              screentip="插入交叉引用 (Ctrl+Alt+V)" imageMso="CrossReferenceInsert"
+              onAction="HandyRef_InsertCrossReferenceField_Normal_RibbonFun" />
+            <menu id="HandyRef_InsertCrossReferenceField_Menu">
+              <button id="HandyRef_InsertCrossReferenceField_Menu_Noraml_Button" label="原文"
+                imageMso="A" onAction="HandyRef_InsertCrossReferenceField_Normal_RibbonFun" />
+              <button id="HandyRef_InsertCrossReferenceField_Menu_ParaNumber_Button" label="段落编号"
+                imageMso="Numbering"
+                onAction="HandyRef_InsertCrossReferenceField_ParaNumber_RibbonFun"
+                getVisible="HandyRef_InsertCrossReferenceField_Menu_GetVisible" />
+              <button id="HandyRef_InsertCrossReferenceField_Menu_PageNumber_Button" label="页码"
+                imageMso="PageNumberFieldInsertGallery"
+                onAction="HandyRef_InsertCrossReferenceField_PageNumber_RibbonFun"
+                getVisible="HandyRef_InsertCrossReferenceField_Menu_GetVisible" />
+              <button id="HandyRef_InsertCrossReferenceField_Menu_RelativePosition_Button"
+                label="相对位置" imageMso="FormControlSpinner"
+                onAction="HandyRef_InsertCrossReferenceField_RelativePosition_RibbonFun"
+                getVisible="HandyRef_InsertCrossReferenceField_Menu_GetVisible" />
+            </menu>
+          </splitButton>
+          <button id="HandyRef_CheckForBrokenRef_Button" label="检查引用"
+            screentip="查找选中内容或整个文档中是否存在损坏的引用，若找到将为其添加批注" size="large" imageMso="ErrorChecking"
+            onAction="HandyRef_CheckForBrokenRef_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <button id="HandyRef_ClearRefBrokenComment_Button" label="清除批注" screentip="清除所有针对损坏引用的批注"
+            size="normal" imageMso="Clear" onAction="HandyRef_ClearRefBrokenComment_RibbonFun"
+            getEnabled="HandyRef_GetEnabled" />
+          <gallery id="HandyRef_GetLatestVersion_Gallery" size="normal" imageMso="Refresh"
+            label="获取更新">
+            <button id="HandyRef_GetLatestVersion_Zhihu_Button" label="知乎"
+              screentip="打开知乎网页获取最新版本" imageMso="Z"
+              onAction="HandyRef_GetLatestVersion_Zhihu_RibbonFun" />
+            <button id="HandyRef_GetLatestVersion_Github_Button" label="Github"
+              screentip="打开Github网页获取最新版本" imageMso="G"
+              onAction="HandyRef_GetLatestVersion_Github_RibbonFun" />
+          </gallery>
+          <button id="HandyRef_About_Button" label="关于“快引”" size="normal" imageMso="Info"
+            onAction="HandyRef_About_RibbonFun" />
+        </group>
       </tab>
     </tabs>
   </ribbon>

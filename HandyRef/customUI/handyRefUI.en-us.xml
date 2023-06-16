@@ -3,13 +3,54 @@
     <tabs>
       <tab idMso="TabReferences">
         <group id="HandyRefGroup" label="HandyRef" imageMso="CrossReferenceInsert">
-          <button id="HandyRef_CreateReferencePoint_Button" label="Create Source" screentip="Create Reference Source Point (Ctrl+Alt+C)" size="large" imageMso="TableOfContentsAddTextGallery" onAction="HandyRef_CreateReferencePoint_RibbonFun" getEnabled="HandyRef_GetEnabled" />
-          <button id="HandyRef_InsertCrossReferenceField_Button" label="Insert Reference" screentip="Insert Cross Reference (Ctrl+Alt+V)" size="large" imageMso="CrossReferenceInsert" onAction="HandyRef_InsertCrossReferenceField_RibbonFun" getEnabled="HandyRef_GetEnabled" />
-          <button id="HandyRef_CheckForBrokenRef_Button" label="Check Reference" screentip="Check for broken reference in the document and add comments for them" size="large" imageMso="ErrorChecking" onAction="HandyRef_CheckForBrokenRef_RibbonFun" getEnabled="HandyRef_GetEnabled" />
-          <button id="HandyRef_ClearRefBrokenComment_Button" label="Clear Comments" screentip="Clear all reference broken comments" size="normal" imageMso="Clear" onAction="HandyRef_ClearRefBrokenComment_RibbonFun" getEnabled="HandyRef_GetEnabled" />
-          <button id="HandyRef_GetLatestVersion_Button" label="Latest Vesion" screentip="Open webpage to get the latest version" size="normal" imageMso="Refresh" onAction="HandyRef_GetLatestVersion_RibbonFun" />
-          <button id="HandyRef_About_Button" label="About HandyRef" size="normal" imageMso="Info" onAction="HandyRef_About_RibbonFun" />
-        </group >
+          <button id="HandyRef_CreateReferencePoint_Button" label="Create Source"
+            screentip="Create Reference Source Point (Ctrl+Alt+C)" size="large"
+            imageMso="TableOfContentsAddTextGallery"
+            onAction="HandyRef_CreateReferencePoint_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <splitButton id="HandyRef_InsertCrossReferenceField_SplitButton" size="large"
+            getEnabled="HandyRef_InsertCrossReferenceField_SplitButton_GetEnabled">
+            <button id="HandyRef_InsertCrossReferenceField_Button" label="Insert Reference"
+              screentip="Insert Cross Reference (Ctrl+Alt+V)" imageMso="CrossReferenceInsert"
+              onAction="HandyRef_InsertCrossReferenceField_Normal_RibbonFun" />
+            <menu id="HandyRef_InsertCrossReferenceField_Menu">
+              <button id="HandyRef_InsertCrossReferenceField_Menu_Noraml_Button" label="Full Text"
+                imageMso="A" onAction="HandyRef_InsertCrossReferenceField_Normal_RibbonFun" />
+              <button id="HandyRef_InsertCrossReferenceField_Menu_ParaNumber_Button"
+                label="Paragraph Number"
+                imageMso="Numbering"
+                onAction="HandyRef_InsertCrossReferenceField_ParaNumber_RibbonFun"
+                getVisible="HandyRef_InsertCrossReferenceField_Menu_GetVisible" />
+              <button id="HandyRef_InsertCrossReferenceField_Menu_PageNumber_Button"
+                label="Page Number"
+                imageMso="PageNumberFieldInsertGallery"
+                onAction="HandyRef_InsertCrossReferenceField_PageNumber_RibbonFun"
+                getVisible="HandyRef_InsertCrossReferenceField_Menu_GetVisible" />
+              <button id="HandyRef_InsertCrossReferenceField_Menu_RelativePosition_Button"
+                label="Relative Position" imageMso="FormControlSpinner"
+                onAction="HandyRef_InsertCrossReferenceField_RelativePosition_RibbonFun"
+                getVisible="HandyRef_InsertCrossReferenceField_Menu_GetVisible" />
+            </menu>
+          </splitButton>
+          <button id="HandyRef_CheckForBrokenRef_Button" label="Check Reference"
+            screentip="Check for broken reference in the selection or the whole document, and add comments for them"
+            size="large" imageMso="ErrorChecking"
+            onAction="HandyRef_CheckForBrokenRef_RibbonFun" getEnabled="HandyRef_GetEnabled" />
+          <button id="HandyRef_ClearRefBrokenComment_Button" label="Clear Comments"
+            screentip="Clear all reference broken comments"
+            size="normal" imageMso="Clear" onAction="HandyRef_ClearRefBrokenComment_RibbonFun"
+            getEnabled="HandyRef_GetEnabled" />
+          <gallery id="HandyRef_GetLatestVersion_Gallery" size="normal" imageMso="Refresh"
+            label="Latest Vesion">
+            <button id="HandyRef_GetLatestVersion_Zhihu_Button" label="Zhihu"
+              screentip="Open webpage on Zhihu to get the latest version" imageMso="Z"
+              onAction="HandyRef_GetLatestVersion_Zhihu_RibbonFun" />
+            <button id="HandyRef_GetLatestVersion_Github_Button" label="Github"
+              screentip="Open webpage on Github to get the latest version" imageMso="G"
+              onAction="HandyRef_GetLatestVersion_Github_RibbonFun" />
+          </gallery>
+          <button id="HandyRef_About_Button" label="About HandyRef" size="normal" imageMso="Info"
+            onAction="HandyRef_About_RibbonFun" />
+        </group>
       </tab>
     </tabs>
   </ribbon>
